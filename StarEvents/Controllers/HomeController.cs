@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using StarEvents.Models;
 
 namespace StarEvents.Controllers
@@ -18,6 +19,8 @@ namespace StarEvents.Controllers
             return View();
         }
 
+
+        [Authorize] // Privacy page only for logged-in users
         public IActionResult Privacy()
         {
             return View();
