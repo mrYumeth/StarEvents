@@ -1,8 +1,9 @@
-﻿using System;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.ComponentModel.DataAnnotations;
+using System.Threading.Tasks;
 
 namespace StarEvents.Data
 {
@@ -27,17 +28,32 @@ namespace StarEvents.Data
     public class Event
     {
         public int Id { get; set; }
+
         public Guid OrganizerId { get; set; }
         public ApplicationUser Organizer { get; set; }
 
         public int VenueId { get; set; }
         public Venue Venue { get; set; }
 
+        [Required, MaxLength(250)]
         public string Title { get; set; }
+
+        public string Description { get; set; }
+
+        [MaxLength(100)]
         public string Category { get; set; }
+
+        [Required]
         public DateTime StartDate { get; set; }
+
         public DateTime? EndDate { get; set; }
+
+        [MaxLength(50)]
+        public string Status { get; set; } = "Draft";
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
+
 
     // 3) Application DbContext using IdentityDbContext
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
