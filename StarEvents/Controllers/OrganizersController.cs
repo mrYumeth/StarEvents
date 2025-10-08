@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StarEvents.Data;
 using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace StarEvents.Controllers
 {
@@ -16,29 +17,57 @@ namespace StarEvents.Controllers
             _context = context;
         }
 
-        // Dashboard
+        // ============================
+        // ORGANIZER DASHBOARD
+        // ============================
         public IActionResult Index()
         {
             return View();
         }
 
+        // ============================
         // CREATE EVENT (GET)
+        // ============================
         [HttpGet]
         public IActionResult CreateEvent()
         {
             return View();
         }
 
+        // ============================
         // CREATE EVENT (POST)
+        // ============================
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateEvent(StarEvents.Data.Event model)
+        public async Task<IActionResult> CreateEvent(Event model)
         {
+            // ✅ Assign organizer ID and Organizer object before validating
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            model.OrganizerId = userId;
+
+            // Optional: attach Organizer object if needed
+            model.Organizer = await _context.Users.FindAsync(userId);
+
+            // Clear Organizer-related model state errors (if already added)
+            ModelState.Remove("OrganizerId");
+            ModelState.Remove("Organizer");
+
             if (ModelState.IsValid)
             {
-                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                model.OrganizerId = Guid.Parse(userId);   // Link to logged in Organizer
-                model.CreatedAt = DateTime.UtcNow;        // Make sure Event model has CreatedAt
+                // ✅ Venue handling
+                if (model.Venue != null && !string.IsNullOrWhiteSpace(model.Venue.VenueName))
+                {
+                    var venue = new Venue
+                    {
+                        VenueName = model.Venue.VenueName
+                    };
+
+                    _context.Venues.Add(venue);
+                    await _context.SaveChangesAsync();
+                    model.VenueId = venue.Id;
+                }
+
+                model.CreatedAt = DateTime.UtcNow;
 
                 _context.Events.Add(model);
                 await _context.SaveChangesAsync();
@@ -49,14 +78,17 @@ namespace StarEvents.Controllers
             return View(model);
         }
 
+
+        // ============================
         // MY EVENTS PAGE
+        // ============================
         public async Task<IActionResult> MyEvents()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var organizerGuid = Guid.Parse(userId);
 
             var events = await _context.Events
-                .Where(e => e.OrganizerId == organizerGuid)
+                .Include(e => e.Venue)
+                .Where(e => e.OrganizerId == userId)
                 .OrderByDescending(e => e.CreatedAt)
                 .ToListAsync();
 

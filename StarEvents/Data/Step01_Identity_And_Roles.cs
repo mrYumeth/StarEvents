@@ -15,21 +15,22 @@ namespace StarEvents.Data
         public int LoyaltyPoints { get; set; }
     }
 
-    // 2) Minimal domain models required for now (expand later)
+    // 2) Simplified Venue model — only name
     public class Venue
     {
         public int Id { get; set; }
-        public string Name { get; set; }
-        public string Address { get; set; }
-        public string City { get; set; }
-        public int Capacity { get; set; }
+
+        [Required]
+        [MaxLength(200)]
+        public string VenueName { get; set; }
     }
 
+    // 3) Event model references Venue normally
     public class Event
     {
         public int Id { get; set; }
 
-        public Guid OrganizerId { get; set; }
+        public string OrganizerId { get; set; }
         public ApplicationUser Organizer { get; set; }
 
         public int VenueId { get; set; }
@@ -54,8 +55,7 @@ namespace StarEvents.Data
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 
-
-    // 3) Application DbContext using IdentityDbContext
+    // 4) Application DbContext
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
@@ -68,11 +68,10 @@ namespace StarEvents.Data
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
-            // Additional constraints/indices can be added here later.
         }
     }
 
-    // 4) Database initializer for seeding roles and a default admin user
+    // 5) Seed roles and admin
     public static class DbInitializer
     {
         public static async Task SeedAsync(IServiceProvider serviceProvider)
@@ -81,7 +80,6 @@ namespace StarEvents.Data
             var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
-            // Roles to ensure
             var roles = new[] { "Admin", "Organizer", "Customer" };
             foreach (var role in roles)
             {
@@ -91,7 +89,6 @@ namespace StarEvents.Data
                 }
             }
 
-            // Create default admin
             var adminEmail = "admin@starevents.com";
             var adminPassword = "Admin@12345";
 
