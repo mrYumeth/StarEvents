@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StarEvents.Data;
 using System.Security.Claims;
+using System.Linq; // Added for .OrderByDescending()
+using System.Threading.Tasks;
 
 namespace StarEvents.Controllers
 {
@@ -37,8 +39,11 @@ namespace StarEvents.Controllers
             if (ModelState.IsValid)
             {
                 var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                model.OrganizerId = Guid.Parse(userId);   // Link to logged in Organizer
-                model.CreatedAt = DateTime.UtcNow;        // Make sure Event model has CreatedAt
+
+                // FIX 1: Assign the string userId directly to OrganizerId
+                model.OrganizerId = userId;
+
+                model.CreatedAt = DateTime.UtcNow;
 
                 _context.Events.Add(model);
                 await _context.SaveChangesAsync();
@@ -53,10 +58,10 @@ namespace StarEvents.Controllers
         public async Task<IActionResult> MyEvents()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var organizerGuid = Guid.Parse(userId);
 
+            // FIX 2: Compare the string OrganizerId directly to the string userId
             var events = await _context.Events
-                .Where(e => e.OrganizerId == organizerGuid)
+                .Where(e => e.OrganizerId == userId) // Removed Guid.Parse()
                 .OrderByDescending(e => e.CreatedAt)
                 .ToListAsync();
 

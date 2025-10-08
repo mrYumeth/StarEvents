@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using StarEvents.Data;
 
@@ -11,9 +12,11 @@ using StarEvents.Data;
 namespace StarEvents.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251008062107_FixEventOrganizerForeignKey")]
+    partial class FixEventOrganizerForeignKey
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -254,8 +257,10 @@ namespace StarEvents.Migrations
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("OrganizerId")
-                        .IsRequired()
+                    b.Property<Guid>("OrganizerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("OrganizerId1")
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime>("StartDate")
@@ -276,7 +281,7 @@ namespace StarEvents.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OrganizerId");
+                    b.HasIndex("OrganizerId1");
 
                     b.HasIndex("VenueId");
 
@@ -366,9 +371,7 @@ namespace StarEvents.Migrations
                 {
                     b.HasOne("StarEvents.Data.ApplicationUser", "Organizer")
                         .WithMany()
-                        .HasForeignKey("OrganizerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("OrganizerId1");
 
                     b.HasOne("StarEvents.Data.Venue", "Venue")
                         .WithMany()

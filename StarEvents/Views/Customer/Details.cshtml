@@ -1,0 +1,65 @@
+﻿@using StarEvents.ViewModels
+@model EventDetailsViewModel
+
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<div class="row">
+    <div class="col-lg-8">
+        <h1 class="display-4">@Model.Title</h1>
+        <p class="lead text-muted">Category: **@Model.Category** | Organized by: **@Model.OrganizerName**</p>
+        <hr />
+
+        <h2 class="mb-3">Event Information</h2>
+        <div class="card p-4 mb-4 shadow-sm">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <h4 class="text-primary"><i class="bi bi-clock"></i> Date & Time</h4>
+                    <p class="mb-0">@Model.DateDisplay</p>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <h4 class="text-primary"><i class="bi bi-geo-alt"></i> Venue</h4>
+                    <p class="mb-0">**@Model.VenueName**</p>
+                    <p class="text-muted mb-0">@Model.VenueAddress</p>
+                </div>
+            </div>
+
+            <hr />
+
+            <h4 class="text-primary"><i class="bi bi-file-text"></i> Description</h4>
+            <p>@Model.Description</p>
+        </div>
+
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card bg-light p-4 mt-lg-5 sticky-top shadow">
+            <h4 class="card-title text-success">Ticket Information</h4>
+            <h5 class="card-subtitle mb-3">@Model.TicketPrice</h5>
+
+            <p class="card-text">
+                <span class="fw-bold">Available Tickets:</span> @Model.AvailableTickets
+            </p>
+
+            <form method="post" asp-controller="Booking" asp-action="Checkout">
+                <input type="hidden" name="EventId" value="@Model.Id" />
+
+                <div class="form-group mb-3">
+                    <label for="Quantity" class="fw-bold">Select Quantity:</label>
+                    <select name="Quantity" id="Quantity" class="form-control">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg w-100">
+                    Book Now
+                </button>
+            </form>
+            <small class="text-muted mt-2 text-center">Loyalty points are calculated at checkout.</small>
+        </div>
+    </div>
+</div>

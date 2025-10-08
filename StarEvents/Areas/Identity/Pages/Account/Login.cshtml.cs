@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
@@ -18,6 +17,7 @@ using StarEvents.Data;
 
 namespace StarEvents.Areas.Identity.Pages.Account
 {
+    [AllowAnonymous]
     public class LoginModel : PageModel
     {
         private readonly SignInManager<ApplicationUser> _signInManager;
@@ -92,22 +92,27 @@ namespace StarEvents.Areas.Identity.Pages.Account
                     // Get the logged-in user
                     var user = await _userManager.FindByEmailAsync(Input.Email);
 
+                    // *** CORRECTED ROLE-BASED REDIRECTION LOGIC ***
                     if (await _userManager.IsInRoleAsync(user, "Admin"))
                     {
-                        return LocalRedirect("/Admin");
+                        // Redirect to Admin Dashboard
+                        return LocalRedirect("/Admin/Index");
                     }
                     else if (await _userManager.IsInRoleAsync(user, "Organizer"))
                     {
-                        return LocalRedirect("/Organizers");
+                        // Redirect to Organizer Event Management page
+                        return LocalRedirect("/Organizers/MyEvents");
                     }
                     else if (await _userManager.IsInRoleAsync(user, "Customer"))
                     {
-                        return LocalRedirect("/Events");
+                        // Redirect to Customer's Search/Discovery page
+                        return LocalRedirect("/Customer/Search");
                     }
 
-                    // Fallback if no specific role
+                    // Fallback if no specific role or something unexpected happened
                     return LocalRedirect(returnUrl);
                 }
+
                 if (result.RequiresTwoFactor)
                 {
                     return RedirectToPage("./LoginWith2fa", new { ReturnUrl = returnUrl, RememberMe = Input.RememberMe });

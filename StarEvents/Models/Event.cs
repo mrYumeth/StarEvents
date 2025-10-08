@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using StarEvents.Data; // Ensure this is the namespace where ApplicationUser is defined
 
 namespace StarEvents.Models
 {
@@ -11,8 +12,13 @@ namespace StarEvents.Models
         public int Id { get; set; }
 
         [Required]
-        public Guid OrganizerId { get; set; }
+        // FIX: Change Guid to string to match the default IdentityUser Id type
+        public string OrganizerId { get; set; } 
+        // Navigation Property - assumes ApplicationUser is defined elsewhere
+        public ApplicationUser Organizer { get; set; } 
 
+        // Note: The ApplicationUser class definition must be moved outside of this file.
+        
         [Required]
         public int VenueId { get; set; }
 
