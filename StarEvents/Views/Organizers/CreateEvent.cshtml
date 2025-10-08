@@ -1,4 +1,4 @@
-﻿@model StarEvents.Models.Event
+﻿@model StarEvents.Data.Event
 @{
     ViewData["Title"] = "Create Event";
 }
@@ -10,36 +10,42 @@
         @Html.AntiForgeryToken()
         <div asp-validation-summary="All" class="text-danger mb-3"></div>
 
+        <!-- Title -->
         <div class="mb-3">
             <label asp-for="Title" class="form-label"></label>
             <input asp-for="Title" class="form-control" />
             <span asp-validation-for="Title" class="text-danger"></span>
         </div>
 
+        <!-- Category -->
         <div class="mb-3">
             <label asp-for="Category" class="form-label"></label>
             <input asp-for="Category" class="form-control" />
             <span asp-validation-for="Category" class="text-danger"></span>
         </div>
 
+        <!-- Venue Name -->
         <div class="mb-3">
-            <label asp-for="VenueId" class="form-label">Venue ID</label>
-            <input asp-for="VenueId" class="form-control" />
-            <span asp-validation-for="VenueId" class="text-danger"></span>
+            <label class="form-label">Venue Name</label>
+            <input type="text" name="Venue.VenueName" class="form-control" placeholder="Enter venue name" required />
+            <span asp-validation-for="Venue.VenueName" class="text-danger"></span>
         </div>
 
+        <!-- Start Date -->
         <div class="mb-3">
             <label asp-for="StartDate" class="form-label"></label>
             <input asp-for="StartDate" type="datetime-local" class="form-control" />
             <span asp-validation-for="StartDate" class="text-danger"></span>
         </div>
 
+        <!-- End Date -->
         <div class="mb-3">
             <label asp-for="EndDate" class="form-label"></label>
             <input asp-for="EndDate" type="datetime-local" class="form-control" />
             <span asp-validation-for="EndDate" class="text-danger"></span>
         </div>
 
+        <!-- Description -->
         <div class="mb-3">
             <label asp-for="Description" class="form-label"></label>
             <textarea asp-for="Description" class="form-control" rows="4"></textarea>
@@ -52,7 +58,5 @@
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    @await Html.PartialAsync("_ValidationScriptsPartial")
 }
