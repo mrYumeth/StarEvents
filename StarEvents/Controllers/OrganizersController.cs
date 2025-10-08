@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StarEvents.Data;
 using System.Security.Claims;
-using System.Threading.Tasks;
+using System; // Ensure System is included for Guid type, although we primarily use string now
 
 namespace StarEvents.Controllers
 {
@@ -17,46 +17,30 @@ namespace StarEvents.Controllers
             _context = context;
         }
 
-        // ============================
-        // ORGANIZER DASHBOARD
-        // ============================
+        // Dashboard
         public IActionResult Index()
         {
             return View();
         }
 
-        // ============================
         // CREATE EVENT (GET)
-        // ============================
         [HttpGet]
         public IActionResult CreateEvent()
         {
             return View();
         }
 
-        // ============================
         // CREATE EVENT (POST)
-        // ============================
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateEvent(Event model)
+        public async Task<IActionResult> CreateEvent(StarEvents.Data.Event model)
         {
-            // ✅ Assign organizer ID and Organizer object before validating
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            model.OrganizerId = userId;
-
-            // Optional: attach Organizer object if needed
-            model.Organizer = await _context.Users.FindAsync(userId);
-
-            // Clear Organizer-related model state errors (if already added)
-            ModelState.Remove("OrganizerId");
-            ModelState.Remove("Organizer");
-
             if (ModelState.IsValid)
             {
-                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                model.OrganizerId = Guid.Parse(userId);   // Link to logged in Organizer
-                model.CreatedAt = DateTime.UtcNow;        // Make sure Event model has CreatedAt
+                // FIX 1 & 2: Get userId as string and assign directly. No Guid conversion needed.
+                var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                model.OrganizerId = currentUserId;  // Link to logged in Organizer (string)
+                model.CreatedAt = DateTime.UtcNow;
 
                 _context.Events.Add(model);
                 await _context.SaveChangesAsync();
@@ -67,17 +51,16 @@ namespace StarEvents.Controllers
             return View(model);
         }
 
-
-        // ============================
         // MY EVENTS PAGE
-        // ============================
         public async Task<IActionResult> MyEvents()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            // FIX 3: Capture the userId string once here.
+            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            // FIX 2: Compare the string OrganizerId directly to the string userId
+            // FIX 1: Use the captured string variable in the query
             var events = await _context.Events
-                .Where(e => e.OrganizerId == organizerGuid)
+                // Filter where the Event's OrganizerId (string) equals the current userIdString
+                .Where(e => e.OrganizerId == userIdString)
                 .OrderByDescending(e => e.CreatedAt)
                 .ToListAsync();
 

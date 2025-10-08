@@ -132,7 +132,7 @@ namespace StarEvents.Controllers
                 DateDisplay = eventEntity.StartDate.ToString("ddd, MMM d, yyyy h:mm tt") +
                               (eventEntity.EndDate.HasValue ? $" - {eventEntity.EndDate.Value.ToString("h:mm tt")}" : ""),
 
-                VenueName = eventEntity.Venue.Name,
+                VenueName = eventEntity.Venue.Name, // Confirmed correct usage of Venue.Name
                 VenueAddress = $"{eventEntity.Venue.Address}, {eventEntity.Venue.City}",
                 VenueCity = eventEntity.Venue.City,
 
