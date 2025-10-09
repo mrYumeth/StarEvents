@@ -1,20 +1,21 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using StarEvents.Data;
-using StarEvents.ViewModels;
-using System.Collections.Generic;
+using StarEvents.Models;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Identity;
 
 namespace StarEvents.Controllers
 {
+    [Authorize(Roles = "Customer")] // Ensure only logged-in customers can access
     public class CustomerController : Controller
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
 
-        // Constructor for Dependency Injection (DI)
         public CustomerController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
@@ -22,127 +23,139 @@ namespace StarEvents.Controllers
         }
 
         // ----------------------------------------------------------------------
-        // 0. Index - Customer Overview/Landing Page (Redirects to Search)
+        // 0. Index - Redirects to the main Dashboard page.
         // ----------------------------------------------------------------------
         // GET: /Customer/Index (or just /Customer)
         public IActionResult Index()
         {
-            // We use the Search page as the main customer landing/overview page.
-            return RedirectToAction(nameof(Search));
+            // Redirect to the new Dashboard action
+            return RedirectToAction(nameof(Dashboard));
         }
 
         // ----------------------------------------------------------------------
-        // 1. Search (GET) - Displays the initial search page.
+        // 1. Dashboard - The main customer landing page after login.
         // ----------------------------------------------------------------------
-
-        // GET: /Customer/Search
-        public async Task<IActionResult> Search()
+        // GET: /Customer/Dashboard
+        public async Task<IActionResult> Dashboard()
         {
-            // When the page loads initially (GET), display all published events.
-            var defaultEvents = await _context.Events
-                .Where(e => e.Status == "Published")
+            // Get the current logged-in user
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return RedirectToPage("/Account/Login", new { area = "Identity" });
+            }
+
+            // Get customer's bookings
+            var bookings = await _context.Bookings
+                .Include(b => b.Event)
+                    .ThenInclude(e => e.Venue)
+                .Where(b => b.CustomerId == user.Id)
+                .OrderByDescending(b => b.BookingDate)
+                .ToListAsync();
+
+            // Calculate statistics
+            ViewBag.TotalBookings = bookings.Count;
+            ViewBag.UpcomingEvents = bookings.Count(b => b.Event.StartDate > DateTime.Now);
+
+            // Get loyalty points (assuming ApplicationUser has LoyaltyPoints property)
+            // If not, you can calculate it from bookings: bookings.Sum(b => b.PointsEarned)
+            ViewBag.LoyaltyPoints = bookings.Sum(b => b.PointsEarned);
+
+            // Calculate total spent
+            ViewBag.TotalSpent = bookings
+                .Where(b => b.Status == "Confirmed" || b.Status == "Completed")
+                .Sum(b => b.TotalAmount)
+                .ToString("N2");
+
+            // Get recent bookings (last 5)
+            var recentBookings = bookings.Take(5).Select(b => new
+            {
+                BookingId = b.Id,
+                EventName = b.Event.Title,
+                EventDate = b.Event.StartDate,
+                TicketQuantity = b.TicketQuantity,
+                TotalAmount = b.TotalAmount.ToString("N2"),
+                Status = b.Status
+            }).ToList();
+
+            ViewBag.RecentBookings = recentBookings;
+
+            // Get featured upcoming events (top 3 events sorted by date)
+            var upcomingEvents = await _context.Events
                 .Include(e => e.Venue)
+                .Where(e => e.StartDate > DateTime.Now && e.IsActive)
                 .OrderBy(e => e.StartDate)
-                .Select(e => new EventViewModel
+                .Take(3)
+                .Select(e => new
                 {
-                    Id = e.Id,
-                    Title = e.Title,
-                    DateRange = e.StartDate.ToString("MMM d, yyyy"),
-                    LocationName = e.Venue.City, // Use City for the main location display
-                    PriceDisplay = "Price Varies" // Placeholder
+                    EventId = e.Id,
+                    EventName = e.Title,
+                    EventDate = e.StartDate,
+                    Location = e.Venue != null ? e.Venue.VenueName : "TBA",
+                    Price = e.TicketPrice.ToString("N2"),
+                    ImageUrl = string.IsNullOrEmpty(e.ImageUrl) ? "/images/default-event.jpg" : e.ImageUrl
                 })
                 .ToListAsync();
 
-            return View(defaultEvents);
+            // Pass the upcoming events to the view
+            return View(upcomingEvents);
         }
 
         // ----------------------------------------------------------------------
-        // 2. Search (POST) - Handles the form submission with search criteria.
+        // 2. Profile - Placeholder for viewing/editing customer profile.
         // ----------------------------------------------------------------------
+        // GET: /Customer/Profile
+        public async Task<IActionResult> Profile()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return RedirectToPage("/Account/Login", new { area = "Identity" });
+            }
 
-        // POST: /Customer/Search
+            // Profile viewing/editing logic will go here.
+            return View(user);
+        }
+
+        // ----------------------------------------------------------------------
+        // 3. Update Profile - Handle profile updates
+        // ----------------------------------------------------------------------
+        // POST: /Customer/Profile
         [HttpPost]
-        public async Task<IActionResult> Search(SearchCriteriaModel criteria) // Receives the data from the form
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Profile(ApplicationUser model)
         {
-            // Start with all published events
-            var eventsQuery = _context.Events
-                .Where(e => e.Status == "Published")
-                .Include(e => e.Venue) // Need Venue data for location filtering
-                .AsQueryable();
-
-            // 1. Filter by Category (if criteria is provided)
-            if (!string.IsNullOrEmpty(criteria.Category) && criteria.Category != "All")
+            if (!ModelState.IsValid)
             {
-                eventsQuery = eventsQuery.Where(e => e.Category == criteria.Category);
+                return View(model);
             }
 
-            // 2. Filter by Location (if criteria is provided)
-            // Note: We are filtering by the Venue's City property.
-            if (!string.IsNullOrEmpty(criteria.Location) && criteria.Location != "Anywhere")
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
             {
-                // We use EF.Functions.Like for a flexible search, or you can use .Contains()
-                eventsQuery = eventsQuery.Where(e =>
-                    EF.Functions.Like(e.Venue.City, $"%{criteria.Location}%"));
+                return RedirectToPage("/Account/Login", new { area = "Identity" });
             }
 
-            // Execute the query and map the results to the ViewModel
-            var searchResults = await eventsQuery
-                .OrderBy(e => e.StartDate)
-                .Select(e => new EventViewModel
-                {
-                    Id = e.Id,
-                    Title = e.Title,
-                    // Simple date formatting, modify as needed
-                    DateRange = e.StartDate.ToString("MMM d, yyyy"),
-                    LocationName = e.Venue.City,
-                    PriceDisplay = "Price Varies" // Placeholder 
-                })
-                .ToListAsync();
+            // Update only allowed fields
+            user.FirstName = model.FirstName;
+            user.LastName = model.LastName;
+            user.PhoneNumber = model.PhoneNumber;
+            // Add other fields as needed
 
-            // Return the search results list back to the same Search.cshtml view.
-            return View(searchResults);
-        }
+            var result = await _userManager.UpdateAsync(user);
 
-        // ----------------------------------------------------------------------
-        // 3. Event Details - (Unchanged and working)
-        // ----------------------------------------------------------------------
-
-        // GET: /Customer/Details/5
-        public async Task<IActionResult> Details(int id)
-        {
-            var eventEntity = await _context.Events
-                .Include(e => e.Venue)
-                .Include(e => e.Organizer)
-                .Where(e => e.Id == id)
-                .FirstOrDefaultAsync();
-
-            if (eventEntity == null)
+            if (result.Succeeded)
             {
-                return NotFound();
+                TempData["SuccessMessage"] = "Profile updated successfully!";
+                return RedirectToAction(nameof(Profile));
             }
 
-            var viewModel = new EventDetailsViewModel
+            foreach (var error in result.Errors)
             {
-                Id = eventEntity.Id,
-                Title = eventEntity.Title,
-                Description = eventEntity.Description,
-                Category = eventEntity.Category,
-                StartDate = eventEntity.StartDate,
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
 
-                DateDisplay = eventEntity.StartDate.ToString("ddd, MMM d, yyyy h:mm tt") +
-                              (eventEntity.EndDate.HasValue ? $" - {eventEntity.EndDate.Value.ToString("h:mm tt")}" : ""),
-
-                VenueName = eventEntity.Venue.Name, // Confirmed correct usage of Venue.Name
-                VenueAddress = $"{eventEntity.Venue.Address}, {eventEntity.Venue.City}",
-                VenueCity = eventEntity.Venue.City,
-
-                OrganizerName = $"{eventEntity.Organizer.FirstName} {eventEntity.Organizer.LastName}",
-
-                AvailableTickets = 500,
-                TicketPrice = "LKR 3000 - LKR 10000"
-            };
-
-            return View(viewModel);
+            return View(model);
         }
     }
 }

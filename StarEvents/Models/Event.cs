@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using StarEvents.Data; // Ensure this is the namespace where ApplicationUser is defined
+using StarEvents.Data;
 
 namespace StarEvents.Models
 {
@@ -12,33 +12,64 @@ namespace StarEvents.Models
         public int Id { get; set; }
 
         [Required]
-        // FIX: Change Guid to string to match the default IdentityUser Id type
-        public string OrganizerId { get; set; } 
-        // Navigation Property - assumes ApplicationUser is defined elsewhere
-        public ApplicationUser Organizer { get; set; } 
+        public string OrganizerId { get; set; }
 
-        // Note: The ApplicationUser class definition must be moved outside of this file.
-        
+        // Navigation Property to Organizer
+        [ForeignKey("OrganizerId")]
+        public ApplicationUser Organizer { get; set; }
+
         [Required]
         public int VenueId { get; set; }
 
+        // Navigation Property to Venue
+        [ForeignKey("VenueId")]
+        public Venue Venue { get; set; }
+
         [Required]
         [MaxLength(250)]
+        [Display(Name = "Event Name")]
         public string Title { get; set; }
 
+        [Display(Name = "Description")]
         public string Description { get; set; }
 
         [MaxLength(100)]
+        [Display(Name = "Category")]
         public string Category { get; set; }
 
         [Required]
+        [Display(Name = "Start Date")]
         public DateTime StartDate { get; set; }
 
+        [Display(Name = "End Date")]
         public DateTime? EndDate { get; set; }
 
-        [MaxLength(50)]
-        public string Status { get; set; } = "Draft";
+        [Required]
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "Ticket Price")]
+        public decimal TicketPrice { get; set; }
 
+        [Display(Name = "Available Tickets")]
+        public int? AvailableTickets { get; set; }
+
+        [MaxLength(500)]
+        [Display(Name = "Image URL")]
+        public string ImageUrl { get; set; }
+
+        [MaxLength(50)]
+        [Display(Name = "Status")]
+        public string Status { get; set; } = "Draft"; // Draft, Active, Cancelled, Completed
+
+        [Display(Name = "Is Active")]
+        public bool IsActive { get; set; } = true;
+
+        [Display(Name = "Created At")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        [Display(Name = "Updated At")]
+        public DateTime? UpdatedAt { get; set; }
+
+        // Navigation Property for Bookings
+        public ICollection<Booking> Bookings { get; set; }
     }
 }

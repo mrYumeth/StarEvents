@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
@@ -17,11 +18,10 @@ using StarEvents.Data;
 
 namespace StarEvents.Areas.Identity.Pages.Account
 {
-    [AllowAnonymous]
     public class LoginModel : PageModel
     {
         private readonly SignInManager<ApplicationUser> _signInManager;
-        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly UserManager<ApplicationUser> _userManager; // Required for role check
         private readonly ILogger<LoginModel> _logger;
 
         public LoginModel(
@@ -89,30 +89,36 @@ namespace StarEvents.Areas.Identity.Pages.Account
                 {
                     _logger.LogInformation("User logged in.");
 
-                    // Get the logged-in user
+                    // Get the logged-in user to check roles
                     var user = await _userManager.FindByEmailAsync(Input.Email);
 
-                    // *** CORRECTED ROLE-BASED REDIRECTION LOGIC ***
+                    if (user == null)
+                    {
+                        // User should not be null after a successful sign-in, but handle defensively
+                        ModelState.AddModelError(string.Empty, "User identity error.");
+                        await _signInManager.SignOutAsync();
+                        return Page();
+                    }
+
+
                     if (await _userManager.IsInRoleAsync(user, "Admin"))
                     {
-                        // Redirect to Admin Dashboard
-                        return LocalRedirect("/Admin/Index");
+                        return LocalRedirect("/Admin");
                     }
                     else if (await _userManager.IsInRoleAsync(user, "Organizer"))
                     {
-                        // Redirect to Organizer Event Management page
+                        // Redirect to the Organizer dashboard/events page
                         return LocalRedirect("/Organizers/MyEvents");
                     }
                     else if (await _userManager.IsInRoleAsync(user, "Customer"))
                     {
-                        // Redirect to Customer's Search/Discovery page
-                        return LocalRedirect("/Customer/Search");
+                        // *** FIXED REDIRECT: Send customer to the new Dashboard page ***
+                        return LocalRedirect("/Customer/Dashboard");
                     }
 
-                    // Fallback if no specific role or something unexpected happened
+                    // Fallback if no specific role or to the provided returnUrl
                     return LocalRedirect(returnUrl);
                 }
-
                 if (result.RequiresTwoFactor)
                 {
                     return RedirectToPage("./LoginWith2fa", new { ReturnUrl = returnUrl, RememberMe = Input.RememberMe });

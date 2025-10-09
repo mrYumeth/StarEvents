@@ -11,17 +11,11 @@ namespace StarEvents.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_Events_AspNetUsers_OrganizerId1",
-                table: "Events");
+            // Removed redundant DropForeignKey, DropIndex, and DropColumn for OrganizerId1
+            // as they were successfully executed in the preceding migration '20251007132101_ChangeOrganizerIdToString'.
 
-            migrationBuilder.DropIndex(
-                name: "IX_Events_OrganizerId1",
-                table: "Events");
-
-            migrationBuilder.DropColumn(
-                name: "OrganizerId1",
-                table: "Events");
+            // NOTE: Removed redundant CreateIndex and AddForeignKey calls below, 
+            // as the previous migration (20251007132101_ChangeOrganizerIdToString) already created them.
 
             migrationBuilder.AlterColumn<string>(
                 name: "OrganizerId",
@@ -31,18 +25,9 @@ namespace StarEvents.Migrations
                 oldClrType: typeof(Guid),
                 oldType: "uniqueidentifier");
 
-            migrationBuilder.CreateIndex(
-                name: "IX_Events_OrganizerId",
-                table: "Events",
-                column: "OrganizerId");
+            // migrationBuilder.CreateIndex(...) REMOVED: Index already exists.
 
-            migrationBuilder.AddForeignKey(
-                name: "FK_Events_AspNetUsers_OrganizerId",
-                table: "Events",
-                column: "OrganizerId",
-                principalTable: "AspNetUsers",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
+            // migrationBuilder.AddForeignKey(...) REMOVED: Foreign Key already exists.
         }
 
         /// <inheritdoc />

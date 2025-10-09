@@ -1,0 +1,123 @@
+﻿@using System.Text.Json
+@{
+    ViewData["Title"] = "Payment & Checkout";
+    // ViewBag.BookingData contains the deserialized data from TempData["BookingData"]
+    dynamic bookingData = ViewBag.BookingData;
+    decimal totalAmount = bookingData != null ? (decimal)bookingData.TotalAmount : 0.00m;
+}
+
+<div class="container mx-auto px-4 py-8 max-w-4xl font-sans">
+    <h2 class="text-4xl font-extrabold mb-8 text-indigo-700 text-center">Final Checkout</h2>
+
+    @* Error Message Display (e.g., if booking session expired) *@
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-lg shadow-md" role="alert">
+            <p class="font-bold">Error</p>
+            <p>@TempData["ErrorMessage"]</p>
+        </div>
+    }
+
+    <div class="flex flex-col lg:flex-row gap-8">
+        @* Booking Summary Panel (Left Side) *@
+        <div class="lg:w-1/2 bg-white p-6 shadow-2xl rounded-xl border-t-4 border-indigo-600">
+            <h3 class="text-2xl font-bold text-gray-800 mb-5 border-b pb-3">Your Order</h3>
+
+            @if (bookingData != null)
+            {
+                <dl class="text-gray-700 space-y-4">
+                    <div class="flex justify-between items-center text-xl font-semibold">
+                        <dt class="text-indigo-600">Event:</dt>
+                        <dd class="text-right">@bookingData.EventName</dd>
+                    </div>
+                    <div class="flex justify-between items-center text-base">
+                        <dt>Location:</dt>
+                        <dd class="text-right">@bookingData.VenueName</dd>
+                    </div>
+                    <div class="flex justify-between items-center text-base">
+                        <dt>Date:</dt>
+                        <dd class="text-right">@bookingData.EventDate</dd>
+                    </div>
+
+                    <hr class="my-4 border-gray-200" />
+
+                    <div class="flex justify-between items-center text-lg">
+                        <dt>Tickets (@bookingData.Quantity x LKR @string.Format("{0:N2}", (decimal)bookingData.UnitPrice))</dt>
+                        <dd class="font-medium">LKR @string.Format("{0:N2}", (decimal)bookingData.Subtotal)</dd>
+                    </div>
+                    <div class="flex justify-between items-center text-lg text-green-600">
+                        <dt>Discount (@(string.IsNullOrWhiteSpace(bookingData.PromoCode.ToString()) ? "None" : bookingData.PromoCode))</dt>
+                        <dd>- LKR @string.Format("{0:N2}", (decimal)bookingData.DiscountAmount)</dd>
+                    </div>
+
+                    <hr class="my-4 border-gray-300 border-dashed" />
+
+                    <div class="flex justify-between items-center text-3xl font-extrabold text-indigo-700 pt-2 bg-indigo-50 p-2 rounded-lg">
+                        <dt>TOTAL PAYABLE</dt>
+                        <dd>LKR @string.Format("{0:N2}", totalAmount)</dd>
+                    </div>
+
+                    <p class="text-sm text-center text-gray-500 mt-4 pt-2 border-t">
+                        <span class="font-bold text-yellow-600">@bookingData.PointsToEarn Loyalty Points</span> will be added to your account upon confirmation.
+                    </p>
+                </dl>
+            }
+            else
+            {
+                <p class="text-red-500">Could not retrieve booking details. Please go back to the event page and try again.</p>
+            }
+        </div>
+
+        @* Payment Form Panel (Right Side) *@
+        <div class="lg:w-1/2 bg-gray-50 p-6 shadow-2xl rounded-xl">
+            <h3 class="text-2xl font-bold mb-5 text-gray-800 border-b pb-3">Choose Payment Method</h3>
+
+            <form asp-controller="Bookings" asp-action="ProcessPayment" method="post" class="space-y-6">
+                @* Payment Method Selection *@
+                <div>
+                    <div class="space-y-3">
+                        <label class="flex items-center p-4 border border-indigo-300 rounded-xl bg-white shadow-sm hover:shadow-lg transition duration-200 cursor-pointer">
+                            <input type="radio" name="paymentMethod" value="CreditCard" required class="form-radio h-5 w-5 text-indigo-600 focus:ring-indigo-500" checked />
+                            <span class="ml-4 text-gray-900 font-semibold">Credit/Debit Card</span>
+                            <span class="ml-auto text-gray-500">VISA, MasterCard</span>
+                        </label>
+                        <label class="flex items-center p-4 border border-gray-300 rounded-xl bg-white shadow-sm hover:shadow-lg transition duration-200 cursor-pointer">
+                            <input type="radio" name="paymentMethod" value="MobileMoney" required class="form-radio h-5 w-5 text-indigo-600 focus:ring-indigo-500" />
+                            <span class="ml-4 text-gray-900 font-semibold">Mobile Money / Wallets</span>
+                            <span class="ml-auto text-gray-500">EziPay, mCash</span>
+                        </label>
+                    </div>
+                </div>
+
+                @* Card Details Fields (Basic placeholders, actual implementation needs validation) *@
+                <div id="card-details-section" class="space-y-4">
+                    <div>
+                        <label for="cardName" class="block text-sm font-medium text-gray-700">Name on Card</label>
+                        <input type="text" id="cardName" name="cardName" class="mt-1 block w-full rounded-lg border border-gray-300 shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Cardholder Name" required>
+                    </div>
+                    <div>
+                        <label for="cardNumber" class="block text-sm font-medium text-gray-700">Card Number</label>
+                        <input type="text" id="cardNumber" name="cardNumber" class="mt-1 block w-full rounded-lg border border-gray-300 shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500" placeholder="XXXX XXXX XXXX XXXX" required>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="w-1/2">
+                            <label for="expiryDate" class="block text-sm font-medium text-gray-700">Expiry Date</label>
+                            <input type="text" id="expiryDate" name="expiryDate" class="mt-1 block w-full rounded-lg border border-gray-300 shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500" placeholder="MM/YY" required>
+                        </div>
+                        <div class="w-1/2">
+                            <label for="cvv" class="block text-sm font-medium text-gray-700">CVV</label>
+                            <input type="text" id="cvv" name="cvv" class="mt-1 block w-full rounded-lg border border-gray-300 shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500" placeholder="123" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-6">
+                    <button type="submit" class="w-full py-4 px-4 border border-transparent rounded-lg shadow-lg text-xl font-bold text-white bg-green-600 hover:bg-green-700 transition duration-150 transform hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-opacity-50">
+                        CONFIRM & PAY LKR @string.Format("{0:N2}", totalAmount)
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>

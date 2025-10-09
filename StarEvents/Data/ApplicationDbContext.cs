@@ -2,8 +2,10 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using StarEvents.Models;
+using StarEvents.Models.Payments;
 using System;
-using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic; // Added missing using for ICollection
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -12,84 +14,18 @@ namespace StarEvents.Data
     // 1) Extend Identity user with profile fields
     public class ApplicationUser : IdentityUser
     {
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
-        public int LoyaltyPoints { get; set; }
+        public string? FirstName { get; set; }
+        public string? LastName { get; set; }
+        public int LoyaltyPoints { get; set; } = 0;
+
+        // Navigation properties
+        public ICollection<Event>? OrganizedEvents { get; set; }
+        public ICollection<Booking>? Bookings { get; set; }
+        // FIXED: Typo CusstomerPayment corrected to CustomerPayment
+        public ICollection<CustomerPayment>? Payments { get; set; } // NEW: Collection of payments made by the user
     }
 
-    // 2) Minimal domain models required for now (expand later)
-    public class Venue
-    {
-        public int Id { get; set; }
-        public string Name { get; set; }
-        public string Address { get; set; }
-        public string City { get; set; }
-        public int Capacity { get; set; }
-    }
-
-    public class Event
-    {
-        public int Id { get; set; }
-
-        // Organizer FK
-        [Required]
-        public string OrganizerId { get; set; }
-        public ApplicationUser Organizer { get; set; }
-
-        // Venue FK
-        public int VenueId { get; set; }
-        public Venue Venue { get; set; } // Navigation property
-
-        [Required, MaxLength(250)]
-        public string Title { get; set; }
-
-        public string Description { get; set; }
-
-        [MaxLength(100)]
-        public string Category { get; set; }
-
-        [Required]
-        public DateTime StartDate { get; set; }
-
-        public DateTime? EndDate { get; set; }
-
-        [MaxLength(50)]
-        public string Status { get; set; } = "Draft";
-
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-        // Navigation property for bookings
-        public ICollection<Booking> Bookings { get; set; }
-    }
-
-    // --- NEW MODEL FOR BOOKING ---
-    public class Booking
-    {
-        public int Id { get; set; }
-
-        // Foreign Key to the Customer (ApplicationUser)
-        [Required]
-        public string CustomerId { get; set; }
-        public ApplicationUser Customer { get; set; }
-
-        // Foreign Key to the Event
-        public int EventId { get; set; }
-        public Event Event { get; set; }
-
-        [Required]
-        public int TicketQuantity { get; set; }
-
-        [Required]
-        public decimal TotalPrice { get; set; }
-
-        [MaxLength(50)]
-        public string PaymentStatus { get; set; } = "Pending";
-
-        public DateTime BookingDate { get; set; } = DateTime.UtcNow;
-    }
-
-
-    // 3) Application DbContext using IdentityDbContext
+    // 2) Application DbContext using IdentityDbContext
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
@@ -98,16 +34,75 @@ namespace StarEvents.Data
 
         public DbSet<Venue> Venues { get; set; }
         public DbSet<Event> Events { get; set; }
-        public DbSet<Booking> Bookings { get; set; } // --- NEW DBSET ---
+        public DbSet<Booking> Bookings { get; set; }
+        // DbSet is named 'Payments' and uses the correct model 'CustomerPayment'
+        public DbSet<CustomerPayment> Payments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
-            // Additional constraints/indices can be added here later.
+
+            // Configure relationships
+            builder.Entity<Event>()
+                .HasOne(e => e.Organizer)
+                .WithMany(u => u.OrganizedEvents)
+                .HasForeignKey(e => e.OrganizerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Event>()
+                .HasOne(e => e.Venue)
+                .WithMany(v => v.Events)
+                .HasForeignKey(e => e.VenueId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Booking>()
+                .HasOne(b => b.Customer)
+                .WithMany(u => u.Bookings)
+                .HasForeignKey(b => b.CustomerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Booking>()
+                .HasOne(b => b.Event)
+                .WithMany(e => e.Bookings)
+                .HasForeignKey(b => b.EventId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // NEW: Payment to ApplicationUser (Customer)
+            // FIXED: Using CustomerPayment model name
+            builder.Entity<CustomerPayment>()
+                .HasOne(p => p.Customer)
+                .WithMany(u => u.Payments)
+                .HasForeignKey(p => p.CustomerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // NEW: Booking to Payment
+            // Note: The Payment model has been inferred to be CustomerPayment for consistency.
+            builder.Entity<Booking>()
+                .HasOne(b => b.Payment)
+                .WithMany(p => p.Bookings)
+                .HasForeignKey(b => b.PaymentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Configure decimal precision
+            builder.Entity<Event>()
+                .Property(e => e.TicketPrice)
+                .HasColumnType("decimal(18,2)");
+
+            builder.Entity<Booking>()
+                .Property(b => b.UnitPrice)
+                .HasColumnType("decimal(18,2)");
+
+            builder.Entity<Booking>()
+                .Property(b => b.DiscountAmount)
+                .HasColumnType("decimal(18,2)");
+
+            builder.Entity<Booking>()
+                .Property(b => b.TotalAmount)
+                .HasColumnType("decimal(18,2)");
         }
     }
 
-    // 4) Database initializer for seeding roles, users, and core data
+    // 3) Database initializer for seeding roles, users, and core data
     public static class DbInitializer
     {
         public static async Task SeedAsync(IServiceProvider serviceProvider)
@@ -117,7 +112,7 @@ namespace StarEvents.Data
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-            // --- 4.1: Seed Roles and Admin User (Existing Logic) ---
+            // --- Seed Roles ---
             var roles = new[] { "Admin", "Organizer", "Customer" };
             foreach (var role in roles)
             {
@@ -127,7 +122,7 @@ namespace StarEvents.Data
                 }
             }
 
-            // Create default admin
+            // --- Seed Admin User ---
             var adminEmail = "admin@starevents.com";
             var adminPassword = "Admin@12345";
             var adminUser = await userManager.FindByEmailAsync(adminEmail);
@@ -150,9 +145,7 @@ namespace StarEvents.Data
                 }
             }
 
-            // --- 4.2: Seed Organizer and Event Data (Existing Logic) ---
-
-            // 1. Create a dedicated Organizer user
+            // --- Seed Organizer User ---
             var organizerEmail = "organizer@starevents.com";
             var organizerUser = await userManager.FindByEmailAsync(organizerEmail);
             if (organizerUser == null)
@@ -170,35 +163,126 @@ namespace StarEvents.Data
                 await userManager.AddToRoleAsync(organizerUser, "Organizer");
             }
 
-            // 2. Seed Venue Data
+            // --- Seed Customer User ---
+            var customerEmail = "customer@starevents.com";
+            var customerUser = await userManager.FindByEmailAsync(customerEmail);
+            if (customerUser == null)
+            {
+                customerUser = new ApplicationUser
+                {
+                    UserName = customerEmail,
+                    Email = customerEmail,
+                    FirstName = "John",
+                    LastName = "Doe",
+                    LoyaltyPoints = 50,
+                    EmailConfirmed = true
+                };
+                await userManager.CreateAsync(customerUser, "Pass123!");
+                await userManager.AddToRoleAsync(customerUser, "Customer");
+            }
+
+            // --- Seed Venues ---
             if (!context.Venues.Any())
             {
-                context.Venues.Add(new Venue
-                {
-                    Name = "Colombo Arena",
-                    Address = "123 Galle Road",
-                    City = "Colombo",
-                    Capacity = 15000
-                });
+                context.Venues.AddRange(
+                    new Venue
+                    {
+                        VenueName = "Colombo Arena",
+                        Address = "123 Galle Road",
+                        City = "Colombo",
+                        Capacity = 15000,
+                        IsActive = true
+                    },
+                    new Venue
+                    {
+                        VenueName = "Kandy City Hall",
+                        Address = "456 Temple Street",
+                        City = "Kandy",
+                        Capacity = 5000,
+                        IsActive = true
+                    }
+                );
                 await context.SaveChangesAsync();
             }
 
-            // 3. Seed Event Data (Requires Venue and Organizer to exist)
+            // --- Seed Events ---
             if (organizerUser != null && context.Venues.Any() && !context.Events.Any())
             {
                 var venue = context.Venues.First();
 
-                context.Events.Add(new Event
+                context.Events.AddRange(
+                    new Event
+                    {
+                        OrganizerId = organizerUser.Id,
+                        VenueId = venue.Id,
+                        Title = "Star Events Grand Concert 2026",
+                        Description = "The biggest music event of the year, featuring international stars and local talent.",
+                        Category = "Music",
+                        StartDate = DateTime.UtcNow.AddDays(90).Date.AddHours(19),
+                        EndDate = DateTime.UtcNow.AddDays(90).Date.AddHours(22),
+                        Status = "Active",
+                        IsActive = true,
+                        TicketPrice = 5000.00m,
+                        AvailableTickets = 10000,
+                        ImageUrl = "/images/concert.jpg",
+                        CreatedAt = DateTime.UtcNow
+                    },
+                    new Event
+                    {
+                        OrganizerId = organizerUser.Id,
+                        VenueId = venue.Id,
+                        Title = "Comedy Night Live",
+                        Description = "An evening of laughter with top comedians from around the world.",
+                        Category = "Comedy",
+                        StartDate = DateTime.UtcNow.AddDays(30).Date.AddHours(20),
+                        EndDate = DateTime.UtcNow.AddDays(30).Date.AddHours(23),
+                        Status = "Active",
+                        IsActive = true,
+                        TicketPrice = 2500.00m,
+                        AvailableTickets = 3000,
+                        ImageUrl = "/images/comedy.jpg",
+                        CreatedAt = DateTime.UtcNow
+                    }
+                );
+                await context.SaveChangesAsync();
+            }
+
+            // --- Seed Sample Booking ---
+            if (customerUser != null && context.Events.Any() && !context.Bookings.Any())
+            {
+                var firstEvent = context.Events.First();
+                var totalAmount = firstEvent.TicketPrice * 2;
+
+                // 1. Create Payment Record (required before Booking can be created)
+                // FIXED: Using correct CustomerPayment model name
+                var samplePayment = new CustomerPayment
                 {
-                    OrganizerId = organizerUser.Id, // FK is now a string!
-                    VenueId = venue.Id,
-                    Title = "Star Events Grand Concert 2026",
-                    Description = "The biggest music event of the year, featuring international stars and local talent.",
-                    Category = "Music",
-                    StartDate = DateTime.UtcNow.AddDays(90).Date.AddHours(19),
-                    EndDate = DateTime.UtcNow.AddDays(90).Date.AddHours(22),
-                    Status = "Published",
-                    CreatedAt = DateTime.UtcNow
+                    Amount = totalAmount,
+                    PaymentMethod = "CreditCard",
+                    TransactionId = "TXN-" + Guid.NewGuid().ToString().Substring(0, 8),
+                    Status = "Confirmed",
+                    PaymentDate = DateTime.UtcNow.AddDays(-5),
+                    CustomerId = customerUser.Id,
+                    CardLastFour = "1234" // Dummy data
+                };
+                context.Payments.Add(samplePayment); // Correct DbSet name
+                await context.SaveChangesAsync();
+
+                // 2. Create Booking Record, linking to the new Payment
+                context.Bookings.Add(new Booking
+                {
+                    CustomerId = customerUser.Id,
+                    EventId = firstEvent.Id,
+                    TicketQuantity = 2,
+                    UnitPrice = firstEvent.TicketPrice,
+                    DiscountAmount = 0,
+                    TotalAmount = totalAmount,
+                    Status = "Confirmed",
+                    PaymentId = samplePayment.Id, // Linked Payment ID
+                    BookingDate = DateTime.UtcNow.AddDays(-5),
+                    // Removed PaymentDate, PaymentMethod, TransactionId
+                    PointsEarned = 100,
+                    CreatedAt = DateTime.UtcNow.AddDays(-5)
                 });
                 await context.SaveChangesAsync();
             }

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using StarEvents.Data;
 
@@ -11,9 +12,11 @@ using StarEvents.Data;
 namespace StarEvents.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251009083415_ApplyAllNullabilityFixes")]
+    partial class ApplyAllNullabilityFixes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -260,8 +263,13 @@ namespace StarEvents.Migrations
                     b.Property<int>("EventId")
                         .HasColumnType("int");
 
-                    b.Property<int>("PaymentId")
-                        .HasColumnType("int");
+                    b.Property<DateTime?>("PaymentDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<int>("PointsEarned")
                         .HasColumnType("int");
@@ -285,6 +293,11 @@ namespace StarEvents.Migrations
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<string>("TransactionId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<decimal>("UnitPrice")
                         .HasColumnType("decimal(18,2)");
 
@@ -297,59 +310,7 @@ namespace StarEvents.Migrations
 
                     b.HasIndex("EventId");
 
-                    b.HasIndex("PaymentId");
-
                     b.ToTable("Bookings");
-                });
-
-            modelBuilder.Entity("StarEvents.Models.ClientPayment", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18, 2)");
-
-                    b.Property<string>("CardLastFour")
-                        .HasMaxLength(4)
-                        .HasColumnType("nvarchar(4)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CustomerId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime>("PaymentDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("PaymentMethod")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<string>("TransactionId")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CustomerId");
-
-                    b.ToTable("Payments");
                 });
 
             modelBuilder.Entity("StarEvents.Models.Event", b =>
@@ -528,28 +489,9 @@ namespace StarEvents.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("StarEvents.Models.ClientPayment", "Payment")
-                        .WithMany("Bookings")
-                        .HasForeignKey("PaymentId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.Navigation("Customer");
 
                     b.Navigation("Event");
-
-                    b.Navigation("Payment");
-                });
-
-            modelBuilder.Entity("StarEvents.Models.ClientPayment", b =>
-                {
-                    b.HasOne("StarEvents.Data.ApplicationUser", "Customer")
-                        .WithMany("Payments")
-                        .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Customer");
                 });
 
             modelBuilder.Entity("StarEvents.Models.Event", b =>
@@ -576,13 +518,6 @@ namespace StarEvents.Migrations
                     b.Navigation("Bookings");
 
                     b.Navigation("OrganizedEvents");
-
-                    b.Navigation("Payments");
-                });
-
-            modelBuilder.Entity("StarEvents.Models.ClientPayment", b =>
-                {
-                    b.Navigation("Bookings");
                 });
 
             modelBuilder.Entity("StarEvents.Models.Event", b =>
