@@ -2,14 +2,14 @@
 using Microsoft.EntityFrameworkCore;
 using StarEvents.Data;
 using StarEvents.ViewModels;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 
-// We do not require authorization on this controller as users should be able to browse events while logged out.
 namespace StarEvents.Controllers
 {
-    // The EventsController handles public-facing event browsing and searching.
-    // Users are directed straight to the Bookings controller for event details and booking.
+    // The EventsController handles public-facing event browsing, searching, and viewing details.
+    // Users can browse events without logging in.
     public class EventsController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -20,14 +20,48 @@ namespace StarEvents.Controllers
         }
 
         // ----------------------------------------------------------------------
-        // 1. Index - Display all active events
+        // 1. Index - Display all active events with search/filter functionality
         // ----------------------------------------------------------------------
         // GET: /Events or /Events/Index
-        public async Task<IActionResult> Index()
+        // Supports query parameters: category, location, dateFrom, keyword
+        public async Task<IActionResult> Index(string? category, string? location, DateTime? dateFrom, string? keyword)
         {
-            var events = await _context.Events
+            // Start with all active events
+            var query = _context.Events
                 .Where(e => e.IsActive && e.Status == "Active")
                 .Include(e => e.Venue)
+                .AsQueryable();
+
+            // Apply filters based on query parameters
+
+            // Filter by Category
+            if (!string.IsNullOrEmpty(category))
+            {
+                query = query.Where(e => e.Category == category);
+            }
+
+            // Filter by Location (City)
+            if (!string.IsNullOrEmpty(location))
+            {
+                query = query.Where(e => e.Venue.City == location);
+            }
+
+            // Filter by Date (events on or after the specified date)
+            if (dateFrom.HasValue)
+            {
+                query = query.Where(e => e.StartDate.Date >= dateFrom.Value.Date);
+            }
+
+            // Filter by Keyword (search in title or description)
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                query = query.Where(e =>
+                    e.Title.Contains(keyword) ||
+                    e.Description.Contains(keyword));
+            }
+
+            // Execute query and map to ViewModel
+            var events = await query
                 .OrderBy(e => e.StartDate)
                 .Select(e => new EventViewModel
                 {
@@ -39,88 +73,93 @@ namespace StarEvents.Controllers
                     PriceDisplay = $"LKR {e.TicketPrice:N2}"
                 })
                 .ToListAsync();
+
+            // Store current filter values in ViewBag for preserving filter state
+            ViewBag.CurrentCategory = category;
+            ViewBag.CurrentLocation = location;
+            ViewBag.CurrentDateFrom = dateFrom?.ToString("yyyy-MM-dd");
+            ViewBag.CurrentKeyword = keyword;
 
             return View(events);
         }
 
         // ----------------------------------------------------------------------
-        // 2. Search (GET) - Displays the initial search page.
+        // 2. Details - Display detailed information about a specific event
+        // ----------------------------------------------------------------------
+        // GET: /Events/Details/5
+        public async Task<IActionResult> Details(int id)
+        {
+            var eventEntity = await _context.Events
+                .Include(e => e.Venue)
+                .Include(e => e.Organizer)
+                .Where(e => e.Id == id)
+                .FirstOrDefaultAsync();
+
+            if (eventEntity == null)
+            {
+                TempData["ErrorMessage"] = "Event not found.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Check if event is still active
+            if (!eventEntity.IsActive)
+            {
+                TempData["ErrorMessage"] = "This event is no longer available.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Map to ViewModel
+            var viewModel = new EventDetailsViewModel
+            {
+                Id = eventEntity.Id,
+                Title = eventEntity.Title,
+                Description = eventEntity.Description,
+                Category = eventEntity.Category,
+                StartDate = eventEntity.StartDate,
+
+                DateDisplay = eventEntity.StartDate.ToString("ddd, MMM d, yyyy h:mm tt") +
+                              (eventEntity.EndDate.HasValue
+                                ? $" - {eventEntity.EndDate.Value.ToString("h:mm tt")}"
+                                : ""),
+
+                VenueName = eventEntity.Venue.VenueName,
+                VenueAddress = $"{eventEntity.Venue.Address}, {eventEntity.Venue.City}",
+                VenueCity = eventEntity.Venue.City,
+
+                OrganizerName = $"{eventEntity.Organizer.FirstName} {eventEntity.Organizer.LastName}",
+
+                AvailableTickets = eventEntity.AvailableTickets ?? 0,
+                TicketPrice = $"LKR {eventEntity.TicketPrice:N2}"
+            };
+
+            return View(viewModel);
+        }
+
+        // ----------------------------------------------------------------------
+        // 3. Search (Legacy) - Kept for backward compatibility if needed
         // ----------------------------------------------------------------------
         // GET: /Events/Search
         public async Task<IActionResult> Search()
         {
-            // When the page loads initially (GET), display all active events.
-            var defaultEvents = await _context.Events
-                .Where(e => e.IsActive && e.Status == "Active")
-                .Include(e => e.Venue)
-                .OrderBy(e => e.StartDate)
-                .Select(e => new EventViewModel
-                {
-                    Id = e.Id,
-                    Title = e.Title,
-                    Category = e.Category,
-                    DateRange = e.StartDate.ToString("MMM d, yyyy"),
-                    LocationName = e.Venue.City,
-                    PriceDisplay = $"LKR {e.TicketPrice:N2}"
-                })
-                .ToListAsync();
-
-            return View(defaultEvents);
+            // Redirect to Index with no filters (shows all events)
+            return RedirectToAction(nameof(Index));
         }
 
         // ----------------------------------------------------------------------
-        // 3. Search (POST) - Handles the form submission with search criteria.
+        // 4. Search (POST) - Handles legacy search form submissions
         // ----------------------------------------------------------------------
         // POST: /Events/Search
         [HttpPost]
         public async Task<IActionResult> Search(SearchCriteriaModel criteria)
         {
-            // Start with all active events
-            var eventsQuery = _context.Events
-                .Where(e => e.IsActive && e.Status == "Active")
-                .Include(e => e.Venue)
-                .AsQueryable();
-
-            // Filter by Category
-            if (!string.IsNullOrEmpty(criteria.Category) && criteria.Category != "All")
+            // Redirect to Index with query parameters
+            return RedirectToAction(nameof(Index), new
             {
-                eventsQuery = eventsQuery.Where(e => e.Category == criteria.Category);
-            }
-
-            // Filter by Location
-            if (!string.IsNullOrEmpty(criteria.Location) && criteria.Location != "Anywhere")
-            {
-                eventsQuery = eventsQuery.Where(e =>
-                    EF.Functions.Like(e.Venue.City, $"%{criteria.Location}%"));
-            }
-
-            // Filter by Date
-            if (criteria.Date.HasValue)
-            {
-                var searchDate = criteria.Date.Value.Date;
-                eventsQuery = eventsQuery.Where(e => e.StartDate.Date == searchDate);
-            }
-
-            var searchResults = await eventsQuery
-                .OrderBy(e => e.StartDate)
-                .Select(e => new EventViewModel
-                {
-                    Id = e.Id,
-                    Title = e.Title,
-                    Category = e.Category,
-                    DateRange = e.StartDate.ToString("MMM d, yyyy"),
-                    LocationName = e.Venue.City,
-                    PriceDisplay = $"LKR {e.TicketPrice:N2}"
-                })
-                .ToListAsync();
-
-            return View(searchResults);
+                category = criteria.Category,
+                location = criteria.Location,
+                dateFrom = criteria.Date,
+                keyword = "" // SearchCriteriaModel doesn't have keyword, but Index supports it
+            });
         }
-
-        // ----------------------------------------------------------------------
-        // 4. Event Details (REMOVED - Users now go directly to Bookings/Book/{id})
-        // ----------------------------------------------------------------------
-        // The Details action was removed as per the requested simplified flow.
-        // Navigation should now link from Index and Search results directly to Bookings/Book/{id}.
     }
 }

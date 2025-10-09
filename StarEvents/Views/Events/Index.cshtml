@@ -1,0 +1,473 @@
+﻿@model IEnumerable<StarEvents.ViewModels.EventViewModel>
+@{
+    ViewData["Title"] = "Browse Events";
+}
+
+<style>
+    .events-hero {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 60px 0 40px 0;
+        margin-bottom: 40px;
+        border-radius: 0 0 30px 30px;
+    }
+
+        .events-hero h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .events-hero p {
+            font-size: 1.2rem;
+            opacity: 0.95;
+        }
+
+    .search-card {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        margin-top: -30px;
+        position: relative;
+        z-index: 10;
+    }
+
+    .search-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 25px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .filter-group {
+        margin-bottom: 20px;
+    }
+
+    .filter-label {
+        font-weight: 600;
+        color: #555;
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .filter-input,
+    .filter-select {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+        .filter-input:focus,
+        .filter-select:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+    .btn-search {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 14px 40px;
+        border-radius: 25px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        width: 100%;
+        transition: all 0.3s ease;
+        margin-top: 10px;
+    }
+
+        .btn-search:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+    .btn-reset {
+        background: white;
+        color: #667eea;
+        border: 2px solid #667eea;
+        padding: 14px 40px;
+        border-radius: 25px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        width: 100%;
+        transition: all 0.3s ease;
+        margin-top: 10px;
+    }
+
+        .btn-reset:hover {
+            background: #f8f9fa;
+        }
+
+    .results-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e0e0e0;
+    }
+
+    .results-count {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #333;
+    }
+
+    .sort-dropdown {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .sort-select {
+        padding: 8px 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 0.95rem;
+    }
+
+    .event-card {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+        .event-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        }
+
+    .event-image {
+        width: 100%;
+        height: 220px;
+        object-fit: cover;
+        position: relative;
+    }
+
+    .event-badge {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        z-index: 5;
+    }
+
+    .event-content {
+        padding: 20px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .event-category {
+        color: #667eea;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+
+    .event-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 12px;
+        line-height: 1.3;
+    }
+
+    .event-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 15px;
+        font-size: 0.95rem;
+        color: #666;
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .event-price {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #667eea;
+        margin-bottom: 15px;
+        margin-top: auto;
+    }
+
+    .btn-view-details {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 25px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+        .btn-view-details:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+
+    .no-events {
+        text-align: center;
+        padding: 80px 20px;
+    }
+
+    .no-events-icon {
+        width: 120px;
+        height: 120px;
+        margin: 0 auto 30px;
+        opacity: 0.3;
+    }
+
+    .no-events h3 {
+        font-size: 1.8rem;
+        color: #999;
+        margin-bottom: 15px;
+    }
+
+    .no-events p {
+        font-size: 1.1rem;
+        color: #aaa;
+    }
+
+    @@media (max-width: 768px) {
+        .events-hero h1 {
+            font-size: 2rem;
+        }
+
+        .results-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+    }
+</style>
+
+<!-- Hero Section -->
+<div class="events-hero">
+    <div class="container text-center">
+        <h1>🎉 Discover Amazing Events</h1>
+        <p>Find concerts, shows, and experiences near you</p>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Search & Filter Card -->
+    <div class="search-card">
+        <h2 class="search-title">
+            🔍 Search Events
+        </h2>
+
+        <form asp-action="Index" asp-controller="Events" method="get">
+            <div class="row">
+                <!-- Category Filter -->
+                <div class="col-md-3 col-sm-6">
+                    <div class="filter-group">
+                        <label class="filter-label">Category</label>
+                        <select name="category" class="filter-select">
+                            <option value="">All Categories</option>
+                            <option value="Music">🎵 Music</option>
+                            <option value="Comedy">😂 Comedy</option>
+                            <option value="Sports">⚽ Sports</option>
+                            <option value="Theatre">🎭 Theatre</option>
+                            <option value="Festival">🎊 Festival</option>
+                            <option value="Conference">💼 Conference</option>
+                            <option value="Workshop">📚 Workshop</option>
+                            <option value="Other">🎪 Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Location Filter -->
+                <div class="col-md-3 col-sm-6">
+                    <div class="filter-group">
+                        <label class="filter-label">Location</label>
+                        <select name="location" class="filter-select">
+                            <option value="">All Locations</option>
+                            <option value="Colombo">Colombo</option>
+                            <option value="Kandy">Kandy</option>
+                            <option value="Galle">Galle</option>
+                            <option value="Negombo">Negombo</option>
+                            <option value="Jaffna">Jaffna</option>
+                            <option value="Matara">Matara</option>
+                            <option value="Anuradhapura">Anuradhapura</option>
+                            <option value="Trincomalee">Trincomalee</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Date Filter -->
+                <div class="col-md-3 col-sm-6">
+                    <div class="filter-group">
+                        <label class="filter-label">Date From</label>
+                        <input type="date" name="dateFrom" class="filter-input" />
+                    </div>
+                </div>
+
+                <!-- Keyword Search -->
+                <div class="col-md-3 col-sm-6">
+                    <div class="filter-group">
+                        <label class="filter-label">Keyword</label>
+                        <input type="text" name="keyword" class="filter-input" placeholder="Search events..." />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search Buttons -->
+            <div class="row mt-3">
+                <div class="col-md-6 mb-2">
+                    <button type="submit" class="btn-search">
+                        🔍 Search Events
+                    </button>
+                </div>
+                <div class="col-md-6 mb-2">
+                    <a href="@Url.Action("Index", "Events")" class="btn-reset">
+                        🔄 Reset Filters
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Results Section -->
+    <div class="mt-5">
+        @if (Model != null && Model.Any())
+        {
+            <!-- Results Header -->
+            <div class="results-header">
+                <div class="results-count">
+                    📋 Found @Model.Count() Events
+                </div>
+                <div class="sort-dropdown">
+                    <label style="font-weight: 600; color: #666;">Sort by:</label>
+                    <select class="sort-select" onchange="sortEvents(this.value)">
+                        <option value="date-asc">Date (Earliest First)</option>
+                        <option value="date-desc">Date (Latest First)</option>
+                        <option value="price-asc">Price (Low to High)</option>
+                        <option value="price-desc">Price (High to Low)</option>
+                        <option value="name-asc">Name (A-Z)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Events Grid -->
+            <div class="row" id="eventsGrid">
+                @foreach (var evt in Model)
+                {
+                    <div class="col-lg-4 col-md-6 mb-4" data-date="@evt.DateRange" data-price="@evt.PriceDisplay" data-name="@evt.Title">
+                        <div class="event-card">
+                            <div style="position: relative;">
+                                <img src="/images/default-event.jpg" alt="@evt.Title" class="event-image" />
+                                <span class="event-badge">@evt.Category</span>
+                            </div>
+
+                            <div class="event-content">
+                                <div class="event-category">@evt.Category</div>
+                                <h3 class="event-title">@evt.Title</h3>
+
+                                <div class="event-meta">
+                                    <div class="meta-item">
+                                        📅 @evt.DateRange
+                                    </div>
+                                    <div class="meta-item">
+                                        📍 @evt.LocationName
+                                    </div>
+                                </div>
+
+                                <div class="event-price">@evt.PriceDisplay</div>
+
+                                <a href="@Url.Action("Details", "Events", new { id = evt.Id })" class="btn-view-details">
+                                    View Details →
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <!-- No Events Found -->
+            <div class="no-events">
+                <div class="no-events-icon">😔</div>
+                <h3>No Events Found</h3>
+                <p>Try adjusting your search filters or check back later for new events.</p>
+                <a href="@Url.Action("Index", "Events")" class="btn-search" style="width: auto; display: inline-block; margin-top: 20px;">
+                    View All Events
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Simple client-side sorting (for demo purposes)
+        function sortEvents(sortBy) {
+            const grid = document.getElementById('eventsGrid');
+            const cards = Array.from(grid.children);
+
+            cards.sort((a, b) => {
+                if (sortBy === 'name-asc') {
+                    return a.dataset.name.localeCompare(b.dataset.name);
+                } else if (sortBy === 'date-asc') {
+                    return a.dataset.date.localeCompare(b.dataset.date);
+                } else if (sortBy === 'date-desc') {
+                    return b.dataset.date.localeCompare(a.dataset.date);
+                }
+                // Add more sorting logic as needed
+                return 0;
+            });
+
+            // Re-append sorted cards
+            cards.forEach(card => grid.appendChild(card));
+        }
+
+        // Preserve filter values after search
+        window.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+
+            if (urlParams.has('category')) {
+                document.querySelector('select[name="category"]').value = urlParams.get('category');
+            }
+            if (urlParams.has('location')) {
+                document.querySelector('select[name="location"]').value = urlParams.get('location');
+            }
+            if (urlParams.has('dateFrom')) {
+                document.querySelector('input[name="dateFrom"]').value = urlParams.get('dateFrom');
+            }
+            if (urlParams.has('keyword')) {
+                document.querySelector('input[name="keyword"]').value = urlParams.get('keyword');
+            }
+        });
+    </script>
+}
