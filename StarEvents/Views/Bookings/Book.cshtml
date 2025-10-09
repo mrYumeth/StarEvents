@@ -1,17 +1,12 @@
-﻿@model StarEvents.Models.Event
+﻿@model StarEvents.ViewModels.EventDetailsViewModel
 @{
     ViewData["Title"] = "Book Tickets";
-
-    // MaxTickets can still be passed via ViewBag, or ideally, added to a ViewModel.
-    var maxTickets = (int?)ViewBag.MaxTickets ?? 10;
-
-    // Handle TempData messages safely
     var errorMessage = TempData["ErrorMessage"] as string;
     var successMessage = TempData["SuccessMessage"] as string;
 }
 
 <style>
-    /* CSS remains the same - no changes needed here */
+    /* Your CSS remains the same */
     .booking-container {
         max-width: 1000px;
         margin: 40px auto;
@@ -200,25 +195,17 @@
 <div class="booking-container">
     @if (!string.IsNullOrEmpty(errorMessage))
     {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="bi bi-x-circle-fill me-2"></i> @errorMessage
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
+        <div class="alert alert-danger">@errorMessage</div>
     }
     @if (!string.IsNullOrEmpty(successMessage))
     {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle-fill me-2"></i> @successMessage
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
+        <div class="alert alert-success">@successMessage</div>
     }
     <div id="js-message-area" style="margin-bottom: 20px;"></div>
 
     @if (Model == null)
     {
-        <div class="alert alert-warning text-center">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i> Event data could not be loaded. Please ensure the event exists.
-        </div>
+        <div class="alert alert-warning">Event data could not be loaded.</div>
     }
     else
     {
@@ -226,21 +213,14 @@
             <div class="event-header">
                 <h2>@Model.Title</h2>
                 <div class="event-meta">
-                    <div class="meta-item">
-                        📅 @Model.StartDate.ToString("MMM dd, yyyy h:mm tt")
-                    </div>
-                    <div class="meta-item">
-                        📍 @(Model.Venue?.VenueName ?? "Venue Unknown"), @(Model.Venue?.City ?? "City Unknown")
-                    </div>
-                    <div class="meta-item">
-                        🎭 @Model.Category
-                    </div>
+                    <div class="meta-item">📅 @Model.DateDisplay</div>
+                    <div class="meta-item">📍 @Model.VenueCity</div>
+                    <div class="meta-item">🎭 @Model.Category</div>
                 </div>
             </div>
 
-            <form asp-action="Book" method="post" id="bookingForm" class="booking-form">
+            <form asp-action="SubmitBooking" asp-controller="Bookings" method="post" id="bookingForm" class="booking-form">
                 @Html.AntiForgeryToken()
-
                 <input type="hidden" name="EventId" value="@Model.Id" />
 
                 <div class="form-section">
@@ -249,14 +229,12 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <strong>Standard Ticket</strong>
-                                <div class="text-muted">LKR @Model.TicketPrice.ToString("N2") per ticket</div>
-                                <div class="available-tickets mt-2">
-                                    @(Model.AvailableTickets ?? 0) tickets available
-                                </div>
+                                <div class="text-muted">@Model.TicketPrice per ticket</div>
+                                <div class="available-tickets mt-2">@Model.AvailableTickets tickets available</div>
                             </div>
                             <div class="quantity-control">
                                 <button type="button" class="quantity-btn" id="decreaseBtn">−</button>
-                                <input type="number" name="Quantity" id="quantityInput" class="quantity-input" value="1" min="1" max="@maxTickets" readonly required />
+                                <input type="number" name="Quantity" id="quantityInput" class="quantity-input" value="1" min="1" max="@Model.AvailableTickets" readonly required />
                                 <button type="button" class="quantity-btn" id="increaseBtn">+</button>
                             </div>
                         </div>
@@ -269,16 +247,13 @@
                         <input type="text" name="PromoCode" id="promoCode" class="promo-input" placeholder="Enter promo code" />
                         <button type="button" class="btn-apply-promo">Apply</button>
                     </div>
-                    <div class="promo-hint">
-                        💡 Your controller will now validate the promo code!
-                    </div>
                 </div>
 
                 <div class="price-summary">
                     <h4 style="margin-bottom: 15px;">Order Summary</h4>
                     <div class="price-row">
                         <span>Ticket Price:</span>
-                        <span>LKR <span id="unitPrice">@Model.TicketPrice.ToString("N2")</span></span>
+                        <span id="unitPrice">@Model.TicketPrice</span>
                     </div>
                     <div class="price-row">
                         <span>Quantity:</span>
@@ -286,7 +261,7 @@
                     </div>
                     <div class="price-row">
                         <span>Subtotal:</span>
-                        <span>LKR <span id="subtotal">@Model.TicketPrice.ToString("N2")</span></span>
+                        <span id="subtotal">@Model.TicketPrice</span>
                     </div>
                     <div class="price-row" id="discountRow" style="display: none; color: #28a745;">
                         <span>Discount:</span>
@@ -294,7 +269,7 @@
                     </div>
                     <div class="price-row total">
                         <span>Total Amount:</span>
-                        <span>LKR <span id="total">@Model.TicketPrice.ToString("N2")</span></span>
+                        <span id="total">@Model.TicketPrice</span>
                     </div>
                 </div>
 
@@ -322,9 +297,9 @@
         // Ensures script runs only if the form exists
         const bookingForm = document.getElementById('bookingForm');
         if (bookingForm) {
-            // CHANGE: Using @Model to initialize JS variables
-            const ticketPrice = @Model.TicketPrice;
-            const maxTickets = @maxTickets;
+            // Use the ViewModel properties passed from the controller
+            const ticketPrice = parseFloat('@Model.TicketPrice'.replace(/[^0-9.-]+/g, ""));
+            const maxTickets = parseInt('@Model.AvailableTickets');
             let currentQuantity = 1;
             let discountPercent = 0; // This is for UI display only
 

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using StarEvents.Data;
 using StarEvents.Models;
 using StarEvents.Models.Payments;
+using StarEvents.ViewModels;
 using System;
 using System.Security.Claims;
 using System.Text.Json; // Required for JSON serialization to use TempData safely
@@ -41,17 +42,38 @@ namespace StarEvents.Controllers
         // GET: /Bookings/Book/{id}
         public async Task<IActionResult> Book(int id)
         {
-            // Fetch event details including the venue
+            // 1. Find the event in the database
             var eventEntity = await _context.Events
-                .Include(e => e.Venue)
-                .FirstOrDefaultAsync(e => e.Id == id);
+                .Include(e => e.Venue) // Include Venue to get location info
+                .FirstOrDefaultAsync(e => e.Id == id && e.IsActive);
 
+            // 2. Handle cases where the event doesn't exist or is sold out
             if (eventEntity == null)
             {
-                return NotFound();
+                TempData["ErrorMessage"] = "The event you're trying to book is not available.";
+                return RedirectToAction("Index", "Events");
             }
 
-            return View(eventEntity);
+            if (eventEntity.AvailableTickets <= 0)
+            {
+                TempData["ErrorMessage"] = "This event is sold out.";
+                return RedirectToAction("Details", "Events", new { id = id });
+            }
+
+            // 3. Map the database data to the ViewModel
+            var viewModel = new EventDetailsViewModel
+            {
+                Id = eventEntity.Id,
+                Title = eventEntity.Title,
+                Category = eventEntity.Category,
+                DateDisplay = eventEntity.StartDate.ToString("ddd, MMM d, yyyy"),
+                VenueCity = eventEntity.Venue.City,
+                TicketPrice = $"LKR {eventEntity.TicketPrice:N2}",
+                AvailableTickets = eventEntity.AvailableTickets ?? 0
+            };
+
+            // 4. Return the View with the correct ViewModel
+            return View(viewModel);
         }
 
         // ----------------------------------------------------------------------

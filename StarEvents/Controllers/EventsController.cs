@@ -70,7 +70,8 @@ namespace StarEvents.Controllers
                     Category = e.Category,
                     DateRange = e.StartDate.ToString("MMM d, yyyy"),
                     LocationName = e.Venue.City,
-                    PriceDisplay = $"LKR {e.TicketPrice:N2}"
+                    PriceDisplay = $"LKR {e.TicketPrice:N2}",
+                    ImageUrl = e.ImageUrl
                 })
                 .ToListAsync();
 
@@ -116,6 +117,7 @@ namespace StarEvents.Controllers
                 Description = eventEntity.Description,
                 Category = eventEntity.Category,
                 StartDate = eventEntity.StartDate,
+                ImageUrl = eventEntity.ImageUrl,
 
                 DateDisplay = eventEntity.StartDate.ToString("ddd, MMM d, yyyy h:mm tt") +
                               (eventEntity.EndDate.HasValue
@@ -162,4 +164,5 @@ namespace StarEvents.Controllers
             });
         }
     }
+
 }
