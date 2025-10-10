@@ -110,7 +110,7 @@ namespace StarEvents.Areas.Identity.Pages.Account
                     else if (await _userManager.IsInRoleAsync(user, "Organizer"))
                     {
                         // Redirect to the Organizer dashboard/events page
-                        return LocalRedirect("/Organizers/MyEvents");
+                        return LocalRedirect("/Organizers/Index");
                     }
                     else if (await _userManager.IsInRoleAsync(user, "Customer"))
                     {

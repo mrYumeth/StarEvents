@@ -84,9 +84,22 @@ namespace StarEvents.Controllers
                 // FIX: Get the 5 most recent *confirmed* bookings for the list
                 RecentBookings = allUserBookings.Where(b => b.Status == "Confirmed").Take(5).ToList(),
 
-                // Assign the featured events list
-                FeaturedEvents = featuredEvents
-            };
+            // Get featured upcoming events (top 3 events sorted by date)
+            var upcomingEvents = await _context.Events
+                .Include(e => e.Venue)
+                .Where(e => e.StartDate > DateTime.Now && e.IsActive)
+                .OrderBy(e => e.StartDate)
+                .Take(3)
+                .Select(e => new
+                {
+                    EventId = e.Id,
+                    EventName = e.Title,
+                    EventDate = e.StartDate,
+                    Location = e.Venue != null ? e.Venue.VenueName : "TBA",
+                    Price = e.TicketPrice.ToString("N2"),
+                    ImageUrl = string.IsNullOrEmpty(e.ImageUrl) ? "/images/default-event.jpg" : e.ImageUrl
+                })
+                .ToListAsync();
 
             return View(dashboardViewModel);
         }

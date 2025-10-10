@@ -16,17 +16,41 @@ namespace StarEvents.Controllers
     {
         private readonly ApplicationDbContext _context;
 
-        public OrganizersController(ApplicationDbContext context)
+        private readonly IWebHostEnvironment _webHostEnvironment;
+
+        public OrganizersController(ApplicationDbContext context, IWebHostEnvironment webHostEnvironment) 
         {
             _context = context;
+            _webHostEnvironment = webHostEnvironment; 
         }
 
         // ----------------------------------------------------------------------
         // Dashboard / Index
         // ----------------------------------------------------------------------
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            return RedirectToAction(nameof(MyEvents));
+            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            // Get all events by this organizer with their bookings
+            var events = await _context.Events
+                .Include(e => e.Bookings)
+                .Where(e => e.OrganizerId == userIdString)
+                .ToListAsync();
+
+            // Calculate statistics
+            ViewBag.TotalEvents = events.Count;
+
+            ViewBag.TotalTicketsSold = events
+                .SelectMany(e => e.Bookings)
+                .Where(b => b.Status == "Confirmed" || b.Status == "Completed")
+                .Sum(b => b.TicketQuantity);
+
+            ViewBag.TotalRevenue = events
+                .SelectMany(e => e.Bookings)
+                .Where(b => b.Status == "Confirmed" || b.Status == "Completed")
+                .Sum(b => b.TotalAmount);
+
+            return View();
         }
 
         // ----------------------------------------------------------------------
@@ -54,6 +78,26 @@ namespace StarEvents.Controllers
         {
             if (ModelState.IsValid)
             {
+                if (model.ImageFile != null)
+                {
+                    // Get the path to the wwwroot/images folder
+                    string wwwRootPath = _webHostEnvironment.WebRootPath;
+                    string fileName = Path.GetFileNameWithoutExtension(model.ImageFile.FileName);
+                    string extension = Path.GetExtension(model.ImageFile.FileName);
+
+                    // Create a unique file name
+                    fileName = fileName + DateTime.Now.ToString("yymmssfff") + extension;
+                    model.ImageUrl = "/images/" + fileName;
+
+                    string path = Path.Combine(wwwRootPath + "/images/", fileName);
+
+                    // Save the file
+                    using (var fileStream = new FileStream(path, FileMode.Create))
+                    {
+                        await model.ImageFile.CopyToAsync(fileStream);
+                    }
+                }
+
                 // Get the current logged-in organizer's ID
                 var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -61,7 +105,6 @@ namespace StarEvents.Controllers
                 model.CreatedAt = DateTime.UtcNow;
                 model.UpdatedAt = DateTime.UtcNow;
 
-                // If Status is not set, default to Draft
                 if (string.IsNullOrEmpty(model.Status))
                 {
                     model.Status = "Draft";
@@ -84,6 +127,7 @@ namespace StarEvents.Controllers
 
             return View(model);
         }
+
 
         // ----------------------------------------------------------------------
         // MY EVENTS PAGE

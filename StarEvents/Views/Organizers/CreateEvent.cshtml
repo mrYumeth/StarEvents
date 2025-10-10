@@ -73,9 +73,9 @@
 
         <!-- Image URL -->
         <div class="mb-3">
-            <label asp-for="ImageUrl" class="form-label"></label>
-            <input asp-for="ImageUrl" class="form-control" placeholder="Enter image URL (optional)" />
-            <span asp-validation-for="ImageUrl" class="text-danger"></span>
+            <label asp-for="ImageFile" class="form-label">Event Image</label>
+            <input asp-for="ImageFile" class="form-control" type="file" accept="image/*" />
+            <span asp-validation-for="ImageFile" class="text-danger"></span>
         </div>
 
         <!-- Description -->
