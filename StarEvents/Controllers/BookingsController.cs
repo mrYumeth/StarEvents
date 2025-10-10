@@ -198,7 +198,8 @@ namespace StarEvents.Controllers
                     TotalAmount = bookingData.TotalAmount,
                     Status = "Confirmed",
                     BookingDate = DateTime.UtcNow,
-                    QRCodeUrl = "/qrcodes/default.png"
+                    QRCodeUrl = "/qrcodes/default.png",
+                    PointsEarned = bookingData.PointsToEarn
                 };
                 _context.Bookings.Add(booking);
 
