@@ -47,8 +47,7 @@ namespace StarEvents.Controllers
 
             // Get customer's bookings
             var bookings = await _context.Bookings
-                .Include(b => b.Event)
-                    .ThenInclude(e => e.Venue)
+                .Include(b => b.Event) // Now the include stops at the Event level
                 .Where(b => b.CustomerId == user.Id)
                 .OrderByDescending(b => b.BookingDate)
                 .ToListAsync();
@@ -82,7 +81,7 @@ namespace StarEvents.Controllers
 
             // Get featured upcoming events (top 3 events sorted by date)
             var upcomingEvents = await _context.Events
-                .Include(e => e.Venue)
+                // .Include(e => e.Venue) is removed
                 .Where(e => e.StartDate > DateTime.Now && e.IsActive)
                 .OrderBy(e => e.StartDate)
                 .Take(3)

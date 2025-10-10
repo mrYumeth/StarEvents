@@ -54,7 +54,10 @@ namespace StarEvents.Models
 
         [MaxLength(500)]
         [Display(Name = "Image URL")]
-        public string ImageUrl { get; set; }
+        public string? ImageUrl { get; set; }
+
+        [NotMapped] // This attribute prevents EF Core from trying to save the file to the database
+        public IFormFile ImageFile { get; set; }
 
         [MaxLength(50)]
         [Display(Name = "Status")]

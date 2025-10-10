@@ -1,13 +1,213 @@
 ﻿@{
     ViewData["Title"] = "Organizer Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    // --- Data from ViewBag (to be added in the controller) ---
+    var totalEvents = (int?)(ViewBag.TotalEvents) ?? 0;
+    var totalTicketsSold = (int?)(ViewBag.TotalTicketsSold) ?? 0;
+    var totalRevenue = (decimal?)(ViewBag.TotalRevenue) ?? 0.00m;
 }
 
-<div class="container mt-5">
-    <h2 class="mb-4">Welcome Organizer 🎤</h2>
-    <p class="mb-4">Manage your events, track registrations, and more.</p>
+@section Styles {
+    <style>
+        /* --- Unique Organizer Dashboard Styling --- */
+        body {
+            overflow-x: hidden;
+        }
 
-    <div class="d-flex gap-3">
-        <a asp-action="CreateEvent" class="btn btn-primary">Create Event</a>
-        <a asp-action="MyEvents" class="btn btn-secondary">My Events</a>
+        .dashboard-container {
+            padding: 30px 0;
+            min-height: calc(100vh - 56px);
+        }
+
+        .welcome-section {
+            background: linear-gradient(135deg, #007991 0%, #78ffd6 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+            .welcome-section h1 {
+                font-size: 2.5rem;
+                font-weight: 700;
+                margin-bottom: 10px;
+            }
+
+            .welcome-section p {
+                font-size: 1.1rem;
+                opacity: 0.95;
+            }
+
+        .stats-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            height: 100%;
+        }
+
+            .stats-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            }
+
+            .stats-card .icon img {
+                width: 48px;
+                height: 48px;
+                object-fit: contain;
+                margin-bottom: 15px;
+            }
+
+            .stats-card h3 {
+                font-size: 2rem;
+                font-weight: 700;
+                color: #007991; /* Teal color for emphasis */
+                margin-bottom: 5px;
+            }
+
+            .stats-card p {
+                color: #666;
+                font-size: 0.95rem;
+                margin: 0;
+            }
+
+        .quick-action-card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+            .quick-action-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            }
+
+        .quick-action-icon img {
+            width: 48px;
+            height: 48px;
+            object-fit: contain;
+            margin-bottom: 20px;
+        }
+
+        .quick-action-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .quick-action-desc {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: auto;
+            padding-bottom: 20px;
+        }
+
+        .btn-action {
+            background: #007991; /* Teal color for buttons */
+            color: white;
+            border: 2px solid #007991;
+            padding: 10px 25px;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+            .btn-action:hover {
+                background: #005666; /* Darker teal on hover */
+                color: white;
+            }
+
+        .section-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+            .section-title::before {
+                content: '';
+                width: 5px;
+                height: 30px;
+                background: linear-gradient(135deg, #007991 0%, #78ffd6 100%);
+                border-radius: 3px;
+            }
+    </style>
+}
+
+<div class="dashboard-container">
+    <div class="container">
+        <div class="welcome-section">
+            <h1>Welcome back, @User.Identity.Name! 🎤</h1>
+            <p>Here's a snapshot of your event activities.</p>
+        </div>
+
+        <div class="row mb-5">
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="stats-card">
+                    <div class="icon"><img src="/images/events-icon.jpg" alt="Total Events" /></div>
+                    <h3>@totalEvents</h3>
+                    <p>Total Events Created</p>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="stats-card">
+                    <div class="icon"><img src="/images/bookings-icon.jpg" alt="Tickets Sold" /></div>
+                    <h3>@totalTicketsSold</h3>
+                    <p>Total Tickets Sold</p>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="stats-card">
+                    <div class="icon"><img src="/images/spent-icon.jpg" alt="Total Revenue" /></div>
+                    <h3>LKR @totalRevenue.ToString("N2")</h3>
+                    <p>Total Revenue</p>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h2 class="section-title">⚡ Quick Actions</h2>
+            <div class="row">
+                <div class="col-md-4 col-sm-6 mb-4">
+                    <div class="quick-action-card">
+                        <div class="quick-action-icon"><img src="/images/browse-icon.jpg" alt="Create Event" /></div>
+                        <h3 class="quick-action-title">Create a New Event</h3>
+                        <p class="quick-action-desc">Get your next event up and running in minutes.</p>
+                        <a asp-action="CreateEvent" class="btn btn-action">Create Event</a>
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-6 mb-4">
+                    <div class="quick-action-card">
+                        <div class="quick-action-icon"><img src="/images/bookings-action-icon.jpg" alt="My Events" /></div>
+                        <h3 class="quick-action-title">Manage My Events</h3>
+                        <p class="quick-action-desc">View, edit, or delete your existing events.</p>
+                        <a asp-action="MyEvents" class="btn btn-action">My Events</a>
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-6 mb-4">
+                    <div class="quick-action-card">
+                        <div class="quick-action-icon"><img src="/images/payment-icon.jpg" alt="Sales Reports" /></div>
+                        <h3 class="quick-action-title">Sales & Revenue Reports</h3>
+                        <p class="quick-action-desc">Track ticket sales and revenue for your events.</p>
+                        <a asp-action="Reports" class="btn btn-action">View Reports</a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
