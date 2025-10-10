@@ -37,7 +37,6 @@ namespace StarEvents.Controllers
         // 1. Dashboard - The main customer landing page after login.
         // ----------------------------------------------------------------------
         // GET: /Customer/Dashboard
-        // In Controllers/CustomerController.cs
 
         public async Task<IActionResult> Dashboard()
         {
@@ -48,7 +47,6 @@ namespace StarEvents.Controllers
             }
 
             // --- Data Fetching ---
-            // Get all of the user's relevant bookings in one query
             var allUserBookings = await _context.Bookings
                 .Where(b => b.CustomerId == user.Id)
                 .Include(b => b.Event)
@@ -56,7 +54,7 @@ namespace StarEvents.Controllers
                 .OrderByDescending(b => b.BookingDate)
                 .ToListAsync();
 
-            // Get the top 3 upcoming events for the "Featured" section
+            // --- THIS BLOCK WAS MOVED HERE (THE CORRECT PLACE) ---
             var featuredEvents = await _context.Events
                 .Where(e => e.IsActive && e.StartDate > DateTime.Now)
                 .Include(e => e.Venue)
@@ -64,42 +62,22 @@ namespace StarEvents.Controllers
                 .Take(3)
                 .ToListAsync();
 
-            // --- Logic Fixes ---
+            // --- Logic ---
             var confirmedBookings = allUserBookings.Where(b => b.Status == "Confirmed" || b.Status == "Completed").ToList();
 
             // --- Populate the ViewModel ---
             var dashboardViewModel = new CustomerDashboardViewModel
             {
-                // Use the user's FirstName for a personal touch
                 UserName = user.FirstName,
-
-                // Calculate stats based on confirmed/completed bookings
                 TotalBookings = confirmedBookings.Count(),
                 UpcomingEventsCount = confirmedBookings.Count(b => b.Event.StartDate > DateTime.Now),
                 TotalSpent = confirmedBookings.Sum(b => b.TotalAmount),
-
-                // FIX: Get current loyalty points directly from the user object
                 LoyaltyPoints = user.LoyaltyPoints,
-
-                // FIX: Get the 5 most recent *confirmed* bookings for the list
                 RecentBookings = allUserBookings.Where(b => b.Status == "Confirmed").Take(5).ToList(),
 
-            // Get featured upcoming events (top 3 events sorted by date)
-            var upcomingEvents = await _context.Events
-                .Include(e => e.Venue)
-                .Where(e => e.StartDate > DateTime.Now && e.IsActive)
-                .OrderBy(e => e.StartDate)
-                .Take(3)
-                .Select(e => new
-                {
-                    EventId = e.Id,
-                    EventName = e.Title,
-                    EventDate = e.StartDate,
-                    Location = e.Venue != null ? e.Venue.VenueName : "TBA",
-                    Price = e.TicketPrice.ToString("N2"),
-                    ImageUrl = string.IsNullOrEmpty(e.ImageUrl) ? "/images/default-event.jpg" : e.ImageUrl
-                })
-                .ToListAsync();
+                // --- THIS IS THE CORRECT ASSIGNMENT ---
+                FeaturedEvents = featuredEvents
+            }; // <-- The closing brace was also missing
 
             return View(dashboardViewModel);
         }
