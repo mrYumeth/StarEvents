@@ -219,7 +219,7 @@
                 </div>
             </div>
 
-            <form asp-action="SubmitBooking" asp-controller="Bookings" method="post" id="bookingForm" class="booking-form">
+            <form asp-action="Book" asp-controller="Bookings" method="post" id="bookingForm" class="booking-form">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="EventId" value="@Model.Id" />
 

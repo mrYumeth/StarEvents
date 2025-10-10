@@ -11,19 +11,7 @@ using System.Threading.Tasks;
 
 namespace StarEvents.Data
 {
-    // 1) Extend Identity user with profile fields
-    public class ApplicationUser : IdentityUser
-    {
-        public string? FirstName { get; set; }
-        public string? LastName { get; set; }
-        public int LoyaltyPoints { get; set; } = 0;
-
-        // Navigation properties
-        public ICollection<Event>? OrganizedEvents { get; set; }
-        public ICollection<Booking>? Bookings { get; set; }
-        // FIXED: Typo CusstomerPayment corrected to CustomerPayment
-        public ICollection<CustomerPayment>? Payments { get; set; } // NEW: Collection of payments made by the user
-    }
+    
 
     // 2) Application DbContext using IdentityDbContext
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser>

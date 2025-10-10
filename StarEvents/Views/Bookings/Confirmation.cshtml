@@ -1,0 +1,158 @@
+﻿@model StarEvents.Models.Booking
+@{
+    ViewData["Title"] = "Booking Confirmed";
+}
+
+@section Styles {
+    <style>
+        .confirmation-container {
+            max-width: 800px;
+            margin: 60px auto;
+            text-align: center;
+        }
+
+        .confirmation-icon {
+            font-size: 6rem;
+            color: #28a745;
+            line-height: 1;
+            margin-bottom: 20px;
+        }
+
+        .confirmation-header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .confirmation-header p {
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .booking-summary-card {
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            padding: 40px;
+            text-align: left;
+            border: 2px solid #28a745;
+        }
+
+        .summary-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            font-size: 1.05rem;
+        }
+
+            .summary-item .label {
+                color: #666;
+                font-weight: 500;
+            }
+
+            .summary-item .value {
+                color: #333;
+                font-weight: 600;
+            }
+
+            .summary-item.total {
+                font-size: 1.3rem;
+                font-weight: 700;
+                color: #333;
+                margin-top: 15px;
+                padding-top: 15px;
+                border-top: 2px solid #333;
+            }
+
+        .actions-section {
+            margin-top: 40px;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .btn-action {
+            padding: 15px 35px;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary-action {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+            .btn-primary-action:hover {
+                color: white;
+                transform: translateY(-2px);
+                box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+            }
+
+        .btn-secondary-action {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+    </style>
+}
+
+<div class="confirmation-container">
+    @if (Model != null)
+    {
+        <div class="confirmation-icon">✅</div>
+        <div class="confirmation-header">
+            <h1>Booking Confirmed!</h1>
+            <p>Thank you for your purchase. A confirmation has been sent to your email.</p>
+        </div>
+
+        <div class="booking-summary-card">
+            <h3 class="summary-title">Your Booking Details</h3>
+            <div class="summary-item">
+                <span class="label">Booking ID:</span>
+                <span class="value">#@Model.Id</span>
+            </div>
+            <div class="summary-item">
+                <span class="label">Event:</span>
+                <span class="value">@Model.Event.Title</span>
+            </div>
+            <div class="summary-item">
+                <span class="label">Date:</span>
+                <span class="value">@Model.Event.StartDate.ToString("ddd, MMM dd, yyyy")</span>
+            </div>
+            <div class="summary-item">
+                <span class="label">Venue:</span>
+                <span class="value">@Model.Event.Venue.VenueName</span>
+            </div>
+            <div class="summary-item">
+                <span class="label">Tickets:</span>
+                <span class="value">@Model.TicketQuantity</span>
+            </div>
+            <div class="summary-item total">
+                <span class="label">Total Paid:</span>
+                <span class="value">LKR @Model.TotalAmount.ToString("N2")</span>
+            </div>
+        </div>
+
+        <div class="actions-section">
+            <a href="#" class="btn-action btn-primary-action">📄 View/Download E-Ticket</a>
+            <a href="@Url.Action("Index", "Events")" class="btn-action btn-secondary-action">Browse More Events</a>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-danger">Could not find booking details.</div>
+    }
+</div>

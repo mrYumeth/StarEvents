@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
 using StarEvents.Data;
+using StarEvents.Models;
 
 namespace StarEvents.Areas.Identity.Pages.Account
 {

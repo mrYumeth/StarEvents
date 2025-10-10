@@ -1,31 +1,35 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using StarEvents.Data;
 using StarEvents.Models;
 using StarEvents.Models.Payments;
 using StarEvents.ViewModels;
 using System;
 using System.Security.Claims;
-using System.Text.Json; // Required for JSON serialization to use TempData safely
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace StarEvents.Controllers
 {
-    // A simple, internal class to hold temporary booking calculation data 
-    // passed between the POST (Book) and GET (Payment) actions via TempData.
     public class BookingData
     {
         public int EventId { get; set; }
-        public string EventTitle { get; set; } = string.Empty;
+        public string EventName { get; set; } = string.Empty;
         public int TicketQuantity { get; set; }
         public decimal UnitPrice { get; set; }
         public decimal DiscountAmount { get; set; }
         public decimal TotalAmount { get; set; }
         public string CustomerId { get; set; } = string.Empty;
+
+        public string EventDate { get; set; } = string.Empty;
+
+        public string VenueName { get; set; } = string.Empty;
+
+        public int PointsToEarn { get; set; }
     }
 
-    // Restricts access to users with the "Customer" role
     [Authorize(Roles = "Customer")]
     public class BookingsController : Controller
     {
@@ -36,18 +40,19 @@ namespace StarEvents.Controllers
             _context = context;
         }
 
-        // ----------------------------------------------------------------------
-        // 1. Book (GET) - Displays the initial booking form for a specific event.
-        // ----------------------------------------------------------------------
         // GET: /Bookings/Book/{id}
         public async Task<IActionResult> Book(int id)
         {
-            // 1. Find the event in the database
             var eventEntity = await _context.Events
-                .Include(e => e.Venue) // Include Venue to get location info
-                .FirstOrDefaultAsync(e => e.Id == id && e.IsActive);
+        .Include(e => e.Venue)
+        .FirstOrDefaultAsync(e => e.Id == id && e.IsActive);
 
-            // 2. Handle cases where the event doesn't exist or is sold out
+            if (eventEntity == null)
+            {
+                TempData["ErrorMessage"] = "Event not found.";
+                return RedirectToAction("Index", "Home");
+            }
+
             if (eventEntity == null)
             {
                 TempData["ErrorMessage"] = "The event you're trying to book is not available.";
@@ -60,7 +65,6 @@ namespace StarEvents.Controllers
                 return RedirectToAction("Details", "Events", new { id = id });
             }
 
-            // 3. Map the database data to the ViewModel
             var viewModel = new EventDetailsViewModel
             {
                 Id = eventEntity.Id,
@@ -72,20 +76,15 @@ namespace StarEvents.Controllers
                 AvailableTickets = eventEntity.AvailableTickets ?? 0
             };
 
-            // 4. Return the View with the correct ViewModel
             return View(viewModel);
         }
 
-        // ----------------------------------------------------------------------
-        // 2. Book (POST) - Calculates totals and redirects to payment.
-        // ----------------------------------------------------------------------
         // POST: /Bookings/Book
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Book(int eventId, int ticketQuantity, string? promoCode)
+        public async Task<IActionResult> Book(int eventId, int quantity, string? promoCode)
         {
-            // Basic validation
-            if (ticketQuantity <= 0)
+            if (quantity <= 0)
             {
                 TempData["ErrorMessage"] = "Ticket quantity must be at least 1.";
                 return RedirectToAction(nameof(Book), new { id = eventId });
@@ -97,59 +96,55 @@ namespace StarEvents.Controllers
                 TempData["ErrorMessage"] = "Event not found.";
                 return RedirectToAction("Index", "Home");
             }
+            
+            // --- CRITICAL FIX: ADDED TICKET AVAILABILITY VALIDATION ---
+            if (eventEntity.AvailableTickets < quantity)
+            {
+                TempData["ErrorMessage"] = $"Sorry, only {eventEntity.AvailableTickets} tickets are available for this event.";
+                return RedirectToAction(nameof(Book), new { id = eventId });
+            }
 
-            // 1. Calculate base totals
             decimal unitPrice = eventEntity.TicketPrice;
-            decimal subTotal = unitPrice * ticketQuantity;
+            decimal subTotal = unitPrice * quantity;
             decimal discountAmount = 0;
 
-            // 2. Apply dummy promo code logic
             if (!string.IsNullOrEmpty(promoCode) && promoCode.ToUpper() == "STAREVENTS")
             {
-                // Apply a fixed 10% discount
                 discountAmount = subTotal * 0.10m;
                 TempData["SuccessMessage"] = "Promo code applied! 10% discount added.";
             }
 
             decimal totalAmount = subTotal - discountAmount;
-
-            // Get current customer ID
             var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            // 3. Prepare data for the Payment action
+
+            int pointsToEarn = (int)Math.Floor(totalAmount / 100); // 1 point per 100 LKR
             var bookingData = new BookingData
             {
                 EventId = eventId,
-                EventTitle = eventEntity.Title,
-                TicketQuantity = ticketQuantity,
+                EventName = eventEntity.Title,
+                EventDate = eventEntity.StartDate.ToString("ddd, MMM d, yyyy"),
+                VenueName = eventEntity.Venue?.VenueName ?? "TBC", // <-- ADD THIS LINE
+                TicketQuantity = quantity,
                 UnitPrice = unitPrice,
                 DiscountAmount = discountAmount,
                 TotalAmount = totalAmount,
-                CustomerId = currentUserId
+                CustomerId = currentUserId,
+                PointsToEarn = pointsToEarn
             };
 
-            // Store data safely using JSON serialization in TempData
             TempData["BookingData"] = JsonSerializer.Serialize(bookingData);
-
-            // 4. Redirect to the Payment action
             return RedirectToAction(nameof(Payment));
         }
 
-        // ----------------------------------------------------------------------
-        // 3. Payment (GET) - Displays the payment summary before transaction.
-        // ----------------------------------------------------------------------
         // GET: /Bookings/Payment
         public async Task<IActionResult> Payment()
         {
-            // Retrieve data from TempData
             if (TempData["BookingData"] is string bookingDataJson)
             {
                 var bookingData = JsonSerializer.Deserialize<BookingData>(bookingDataJson);
-
-                // Re-store TempData so it persists across redirects during the payment process
                 TempData.Keep("BookingData");
 
-                // Fetch event details needed for the view (like venue name)
                 var eventEntity = await _context.Events
                     .Include(e => e.Venue)
                     .FirstOrDefaultAsync(e => e.Id == bookingData.EventId);
@@ -163,15 +158,11 @@ namespace StarEvents.Controllers
             return RedirectToAction("Index", "Home");
         }
 
-        // ----------------------------------------------------------------------
-        // 4. ProcessPayment (POST) - Saves the payment and booking records.
-        // ----------------------------------------------------------------------
         // POST: /Bookings/ProcessPayment
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ProcessPayment(string paymentMethod, string? cardLastFour)
         {
-            // 1. Retrieve Booking Data from TempData
             if (TempData["BookingData"] is not string bookingDataJson)
             {
                 TempData["ErrorMessage"] = "Booking session expired. Please start the booking process again.";
@@ -180,17 +171,12 @@ namespace StarEvents.Controllers
 
             var bookingData = JsonSerializer.Deserialize<BookingData>(bookingDataJson);
 
-            // We don't need to keep TempData anymore, as we are completing the transaction.
-
-            // 2. Start Transaction Scope (using Entity Framework SaveChanges is often enough)
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // --- A. Create CustomerPayment Record ---
-                var payment = new CustomerPayment // Correct model name
+                var payment = new CustomerPayment
                 {
                     Amount = bookingData.TotalAmount,
-                    // In a real system, this comes from the gateway
                     TransactionId = "TXN-" + Guid.NewGuid().ToString().Substring(0, 8).ToUpper(),
                     PaymentMethod = paymentMethod,
                     PaymentDate = DateTime.UtcNow,
@@ -198,28 +184,24 @@ namespace StarEvents.Controllers
                     CustomerId = bookingData.CustomerId,
                     CardLastFour = cardLastFour
                 };
-                // FIXED: Using the correct DbSet name 'Payments' as defined in ApplicationDbContext
                 _context.Payments.Add(payment);
                 await _context.SaveChangesAsync();
 
-                // --- B. Create Booking Record ---
                 var booking = new Booking
                 {
                     CustomerId = bookingData.CustomerId,
                     EventId = bookingData.EventId,
-                    PaymentId = payment.Id, // Link Payment to Booking
+                    PaymentId = payment.Id,
                     TicketQuantity = bookingData.TicketQuantity,
                     UnitPrice = bookingData.UnitPrice,
                     DiscountAmount = bookingData.DiscountAmount,
                     TotalAmount = bookingData.TotalAmount,
                     Status = "Confirmed",
                     BookingDate = DateTime.UtcNow,
-                    // You might generate a real QR code URL here later
                     QRCodeUrl = "/qrcodes/default.png"
                 };
                 _context.Bookings.Add(booking);
 
-                // --- C. Update Available Tickets (optional but recommended) ---
                 var eventToUpdate = await _context.Events.FirstOrDefaultAsync(e => e.Id == bookingData.EventId);
                 if (eventToUpdate != null && eventToUpdate.AvailableTickets.HasValue)
                 {
@@ -230,22 +212,17 @@ namespace StarEvents.Controllers
                 await transaction.CommitAsync();
 
                 TempData["SuccessMessage"] = $"Booking #{booking.Id} confirmed! Payment successful.";
-                // Redirect to a confirmation or my-bookings page
                 return RedirectToAction("Confirmation", new { bookingId = booking.Id });
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
                 TempData["ErrorMessage"] = "Payment failed due to a system error. Please try again. " + ex.Message;
-                // Re-store TempData so the user can re-try the payment immediately
                 TempData.Keep("BookingData");
                 return RedirectToAction(nameof(Payment));
             }
         }
 
-        // ----------------------------------------------------------------------
-        // 5. Confirmation (GET) - Placeholder for booking confirmation page.
-        // ----------------------------------------------------------------------
         // GET: /Bookings/Confirmation/5
         [HttpGet]
         public async Task<IActionResult> Confirmation(int bookingId)
@@ -253,7 +230,7 @@ namespace StarEvents.Controllers
             var booking = await _context.Bookings
                 .Include(b => b.Event)
                 .ThenInclude(e => e.Venue)
-                .Include(b => b.Payment) // Include payment details
+                .Include(b => b.Payment)
                 .FirstOrDefaultAsync(b => b.Id == bookingId);
 
             if (booking == null)
