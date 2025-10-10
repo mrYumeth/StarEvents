@@ -1,0 +1,548 @@
+﻿@model StarEvents.Models.Booking
+@{
+    ViewData["Title"] = "E-Ticket";
+}
+
+<style>
+    .ticket-container {
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    .ticket-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+
+    .btn-print,
+    .btn-download {
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 25px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-print:hover,
+    .btn-download:hover {
+        background: #764ba2;
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .btn-back {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .ticket-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        overflow: hidden;
+        position: relative;
+    }
+
+    .ticket-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 40px 40px 30px 40px;
+        position: relative;
+    }
+
+    .ticket-header::after {
+        content: '';
+        position: absolute;
+        bottom: -20px;
+        left: 0;
+        right: 0;
+        height: 40px;
+        background: white;
+        border-radius: 50% 50% 0 0 / 20px 20px 0 0;
+    }
+
+    .ticket-logo {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+
+    .ticket-type {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .ticket-body {
+        padding: 40px;
+    }
+
+    .event-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+
+    .ticket-details-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 25px;
+        margin-bottom: 30px;
+    }
+
+    .detail-item {
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 12px;
+        border-left: 4px solid #667eea;
+    }
+
+    .detail-label {
+        font-size: 0.85rem;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+        font-weight: 600;
+    }
+
+    .detail-value {
+        font-size: 1.1rem;
+        color: #333;
+        font-weight: 600;
+    }
+
+    .detail-value.large {
+        font-size: 1.4rem;
+        color: #667eea;
+    }
+
+    .qr-section {
+        text-align: center;
+        padding: 40px 20px;
+        background: linear-gradient(to bottom, #f8f9fa 0%, white 100%);
+        border-radius: 15px;
+        margin-bottom: 30px;
+    }
+
+    .qr-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 20px;
+    }
+
+    .qr-code-box {
+        width: 280px;
+        height: 280px;
+        margin: 0 auto;
+        padding: 20px;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        border: 3px dashed #667eea;
+    }
+
+    .qr-code-box img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .qr-instructions {
+        margin-top: 20px;
+        font-size: 0.95rem;
+        color: #666;
+        max-width: 500px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .booking-reference {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 12px;
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .booking-ref-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        margin-bottom: 5px;
+    }
+
+    .booking-ref-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        letter-spacing: 2px;
+    }
+
+    .venue-info {
+        background: #e3f2fd;
+        padding: 25px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+    }
+
+    .venue-info h3 {
+        color: #1976d2;
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 15px;
+    }
+
+    .venue-detail {
+        display: flex;
+        align-items: start;
+        gap: 10px;
+        margin-bottom: 10px;
+        color: #555;
+    }
+
+    .venue-detail .icon {
+        font-size: 1.2rem;
+        margin-top: 2px;
+    }
+
+    .important-notes {
+        background: #fff3cd;
+        padding: 20px;
+        border-radius: 12px;
+        border-left: 4px solid #ffc107;
+    }
+
+    .important-notes h3 {
+        color: #856404;
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: 15px;
+    }
+
+    .important-notes ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .important-notes li {
+        padding: 8px 0;
+        color: #856404;
+        display: flex;
+        align-items: start;
+        gap: 10px;
+    }
+
+    .important-notes li::before {
+        content: "⚠️";
+        font-size: 1rem;
+    }
+
+    .ticket-footer {
+        text-align: center;
+        padding: 30px;
+        background: #f8f9fa;
+        border-top: 2px dashed #dee2e6;
+    }
+
+    .ticket-footer p {
+        margin: 5px 0;
+        color: #666;
+        font-size: 0.9rem;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 8px 20px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+    }
+
+    .status-confirmed {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .status-cancelled {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .cancel-section {
+        margin-top: 30px;
+        padding-top: 30px;
+        border-top: 2px solid #dee2e6;
+    }
+
+    .btn-cancel {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 25px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-cancel:hover {
+        background: #c82333;
+        transform: translateY(-2px);
+    }
+
+    @@media print {
+        .ticket-actions,
+        .btn-back,
+        .cancel-section {
+            display: none !important;
+        }
+
+        .ticket-container {
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        .ticket-card {
+            box-shadow: none;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .ticket-details-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .ticket-actions {
+            flex-direction: column;
+            gap: 15px;
+            align-items: stretch;
+        }
+
+        .event-title {
+            font-size: 1.5rem;
+        }
+
+        .qr-code-box {
+            width: 220px;
+            height: 220px;
+        }
+    }
+</style>
+
+<div class="ticket-container">
+    <!-- Action Buttons -->
+    <div class="ticket-actions">
+        <a href="@Url.Action("MyBookings", "Bookings")" class="btn-back">
+            ← Back to My Bookings
+        </a>
+        <div style="display: flex; gap: 10px;">
+            <button onclick="window.print()" class="btn-print">
+                🖨️ Print Ticket
+            </button>
+            <a href="#" class="btn-download" onclick="downloadTicket(); return false;">
+                📥 Download PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- Ticket Card -->
+    <div class="ticket-card" id="ticketCard">
+        <!-- Ticket Header -->
+        <div class="ticket-header">
+            <div class="ticket-logo">🎫 StarEvents</div>
+            <div class="ticket-type">Electronic Ticket</div>
+        </div>
+
+        <!-- Ticket Body -->
+        <div class="ticket-body">
+            <!-- Status Badge -->
+            <div style="text-align: center;">
+                <span class="status-badge status-@Model.Status.ToLower()">
+                    @if (Model.Status == "Confirmed")
+                    {
+                        <span>✓ @Model.Status</span>
+                    }
+                    else if (Model.Status == "Cancelled")
+                    {
+                        <span>✗ @Model.Status</span>
+                    }
+                    else
+                    {
+                        <span>@Model.Status</span>
+                    }
+                </span>
+            </div>
+
+            <!-- Event Title -->
+            <h1 class="event-title">@Model.Event.Title</h1>
+
+            <!-- Booking Reference -->
+            <div class="booking-reference">
+                <div class="booking-ref-label">Booking Reference</div>
+                <div class="booking-ref-value">#@Model.Id.ToString("D6")</div>
+            </div>
+
+            <!-- Ticket Details -->
+            <div class="ticket-details-grid">
+                <div class="detail-item">
+                    <div class="detail-label">📅 Date & Time</div>
+                    <div class="detail-value">@Model.Event.StartDate.ToString("ddd, MMM dd, yyyy")</div>
+                    <div class="detail-value">@Model.Event.StartDate.ToString("h:mm tt")</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">📍 Venue</div>
+                    <div class="detail-value">@Model.Event.Venue.VenueName</div>
+                    <div class="detail-value" style="font-size: 0.95rem; color: #666;">@Model.Event.Venue.City</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">🎟️ Number of Tickets</div>
+                    <div class="detail-value large">@Model.TicketQuantity</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">💰 Total Amount</div>
+                    <div class="detail-value large">LKR @Model.TotalAmount.ToString("N2")</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">👤 Customer Name</div>
+                    <div class="detail-value">@Model.Customer.FirstName @Model.Customer.LastName</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">📧 Email</div>
+                    <div class="detail-value" style="font-size: 0.95rem;">@Model.Customer.Email</div>
+                </div>
+            </div>
+
+            <!-- QR Code Section -->
+            <div class="qr-section">
+                <h3 class="qr-title">📱 Entry QR Code</h3>
+                <div class="qr-code-box">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=BOOKING-@Model.Id-@Model.Payment.TransactionId" 
+                         alt="Ticket QR Code" />
+                </div>
+                <p class="qr-instructions">
+                    Present this QR code at the venue entrance for scanning. 
+                    Screenshot or print this ticket for entry.
+                </p>
+            </div>
+
+            <!-- Venue Information -->
+            <div class="venue-info">
+                <h3>📍 Venue Information</h3>
+                <div class="venue-detail">
+                    <span class="icon">🏢</span>
+                    <span>@Model.Event.Venue.VenueName</span>
+                </div>
+                <div class="venue-detail">
+                    <span class="icon">📍</span>
+                    <span>@Model.Event.Venue.Address, @Model.Event.Venue.City</span>
+                </div>
+                <div class="venue-detail">
+                    <span class="icon">👥</span>
+                    <span>Capacity: @Model.Event.Venue.Capacity persons</span>
+                </div>
+            </div>
+
+            <!-- Important Notes -->
+            <div class="important-notes">
+                <h3>⚠️ Important Information</h3>
+                <ul>
+                    <li>Please arrive at least 30 minutes before the event start time</li>
+                    <li>This ticket is valid for @Model.TicketQuantity person(s) only</li>
+                    <li>ID verification may be required at the entrance</li>
+                    <li>Outside food and beverages are not permitted</li>
+                    <li>Photography and recording may be restricted</li>
+                    <li>Ticket is non-transferable and non-refundable after 48 hours</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Ticket Footer -->
+        <div class="ticket-footer">
+            <p><strong>Transaction ID:</strong> @Model.Payment.TransactionId</p>
+            <p><strong>Booking Date:</strong> @Model.BookingDate.ToString("MMM dd, yyyy h:mm tt")</p>
+            <p>For support, contact: support@starevents.com | +94 11 234 5678</p>
+            <p style="margin-top: 15px; font-size: 0.8rem; color: #999;">
+                © @DateTime.Now.Year StarEvents. All rights reserved.
+            </p>
+        </div>
+    </div>
+
+    <!-- Cancel Booking Section -->
+    @if (Model.Status == "Confirmed" && Model.Event.StartDate > DateTime.Now.AddHours(48))
+    {
+        <div class="cancel-section">
+            <h3 style="color: #333; margin-bottom: 15px;">Need to Cancel?</h3>
+            <p style="color: #666; margin-bottom: 20px;">
+                You can cancel this booking up to 48 hours before the event starts.
+            </p>
+            <button type="button" class="btn-cancel" onclick="confirmCancel()">
+                Cancel Booking
+            </button>
+        </div>
+    }
+</div>
+
+<!-- Cancel Modal -->
+<div class="modal fade" id="cancelModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cancel Booking</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="Cancel" asp-controller="Bookings" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <div class="modal-body">
+                    <p>Are you sure you want to cancel this booking?</p>
+                    <div class="mb-3">
+                        <label class="form-label">Reason for cancellation:</label>
+                        <textarea name="reason" class="form-control" rows="3" required></textarea>
+                    </div>
+                    <div class="alert alert-warning">
+                        ⚠️ This action cannot be undone. Refunds will be processed within 5-7 business days.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Keep Booking</button>
+                    <button type="submit" class="btn btn-danger">Confirm Cancellation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function confirmCancel() {
+            var modal = new bootstrap.Modal(document.getElementById('cancelModal'));
+            modal.show();
+        }
+
+        function downloadTicket() {
+            window.print();
+            // For actual PDF generation, you would need a library like jsPDF or server-side PDF generation
+        }
+    </script>
+}

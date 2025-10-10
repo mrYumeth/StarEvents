@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using StarEvents.Data;
 using StarEvents.Models;
 using StarEvents.Models.Payments;
@@ -10,6 +9,8 @@ using System;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Threading.Tasks;
+using QRCoder;
+using System.IO;
 
 namespace StarEvents.Controllers
 {
@@ -22,11 +23,8 @@ namespace StarEvents.Controllers
         public decimal DiscountAmount { get; set; }
         public decimal TotalAmount { get; set; }
         public string CustomerId { get; set; } = string.Empty;
-
         public string EventDate { get; set; } = string.Empty;
-
         public string VenueName { get; set; } = string.Empty;
-
         public int PointsToEarn { get; set; }
     }
 
@@ -44,15 +42,10 @@ namespace StarEvents.Controllers
         public async Task<IActionResult> Book(int id)
         {
             var eventEntity = await _context.Events
-        .Include(e => e.Venue)
-        .FirstOrDefaultAsync(e => e.Id == id && e.IsActive);
+                .Include(e => e.Venue)
+                .FirstOrDefaultAsync(e => e.Id == id && e.IsActive);
 
-            if (eventEntity == null)
-            {
-                TempData["ErrorMessage"] = "Event not found.";
-                return RedirectToAction("Index", "Home");
-            }
-
+            // FIX: Removed duplicate null check. This one is sufficient.
             if (eventEntity == null)
             {
                 TempData["ErrorMessage"] = "The event you're trying to book is not available.";
@@ -90,14 +83,17 @@ namespace StarEvents.Controllers
                 return RedirectToAction(nameof(Book), new { id = eventId });
             }
 
-            var eventEntity = await _context.Events.FirstOrDefaultAsync(e => e.Id == eventId);
+            // FIX: Added .Include(e => e.Venue) to ensure VenueName is loaded
+            var eventEntity = await _context.Events
+                .Include(e => e.Venue)
+                .FirstOrDefaultAsync(e => e.Id == eventId);
+
             if (eventEntity == null)
             {
                 TempData["ErrorMessage"] = "Event not found.";
-                return RedirectToAction("Index", "Home");
+                return RedirectToAction("Index", "Events");
             }
-            
-            // --- CRITICAL FIX: ADDED TICKET AVAILABILITY VALIDATION ---
+
             if (eventEntity.AvailableTickets < quantity)
             {
                 TempData["ErrorMessage"] = $"Sorry, only {eventEntity.AvailableTickets} tickets are available for this event.";
@@ -116,15 +112,14 @@ namespace StarEvents.Controllers
 
             decimal totalAmount = subTotal - discountAmount;
             var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            int pointsToEarn = (int)Math.Floor(totalAmount / 100);
 
-
-            int pointsToEarn = (int)Math.Floor(totalAmount / 100); // 1 point per 100 LKR
             var bookingData = new BookingData
             {
                 EventId = eventId,
                 EventName = eventEntity.Title,
                 EventDate = eventEntity.StartDate.ToString("ddd, MMM d, yyyy"),
-                VenueName = eventEntity.Venue?.VenueName ?? "TBC", // <-- ADD THIS LINE
+                VenueName = eventEntity.Venue?.VenueName ?? "TBC",
                 TicketQuantity = quantity,
                 UnitPrice = unitPrice,
                 DiscountAmount = discountAmount,
@@ -154,8 +149,8 @@ namespace StarEvents.Controllers
                 return View();
             }
 
-            TempData["ErrorMessage"] = "Booking session expired or incomplete. Please book again.";
-            return RedirectToAction("Index", "Home");
+            TempData["ErrorMessage"] = "Booking session expired. Please book again.";
+            return RedirectToAction("Index", "Events");
         }
 
         // POST: /Bookings/ProcessPayment
@@ -165,8 +160,8 @@ namespace StarEvents.Controllers
         {
             if (TempData["BookingData"] is not string bookingDataJson)
             {
-                TempData["ErrorMessage"] = "Booking session expired. Please start the booking process again.";
-                return RedirectToAction("Index", "Home");
+                TempData["ErrorMessage"] = "Booking session expired. Please start again.";
+                return RedirectToAction("Index", "Events");
             }
 
             var bookingData = JsonSerializer.Deserialize<BookingData>(bookingDataJson);
@@ -198,48 +193,88 @@ namespace StarEvents.Controllers
                     TotalAmount = bookingData.TotalAmount,
                     Status = "Confirmed",
                     BookingDate = DateTime.UtcNow,
-                    QRCodeUrl = "/qrcodes/default.png",
                     PointsEarned = bookingData.PointsToEarn
                 };
                 _context.Bookings.Add(booking);
 
-                var eventToUpdate = await _context.Events.FirstOrDefaultAsync(e => e.Id == bookingData.EventId);
-                if (eventToUpdate != null && eventToUpdate.AvailableTickets.HasValue)
+                var eventToUpdate = await _context.Events.FindAsync(bookingData.EventId);
+                if (eventToUpdate != null)
                 {
                     eventToUpdate.AvailableTickets -= bookingData.TicketQuantity;
+                }
+
+                var customer = await _context.Users.FindAsync(bookingData.CustomerId);
+                if (customer != null)
+                {
+                    customer.LoyaltyPoints += bookingData.PointsToEarn;
                 }
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                TempData["SuccessMessage"] = $"Booking #{booking.Id} confirmed! Payment successful.";
+                TempData["SuccessMessage"] = $"Booking #{booking.Id} confirmed! You've earned {bookingData.PointsToEarn} points.";
                 return RedirectToAction("Confirmation", new { bookingId = booking.Id });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 await transaction.RollbackAsync();
-                TempData["ErrorMessage"] = "Payment failed due to a system error. Please try again. " + ex.Message;
+                TempData["ErrorMessage"] = "Payment failed. Please try again.";
                 TempData.Keep("BookingData");
                 return RedirectToAction(nameof(Payment));
             }
         }
 
-        // GET: /Bookings/Confirmation/5
-        [HttpGet]
+        // GET: /Bookings/Confirmation/{id}
         public async Task<IActionResult> Confirmation(int bookingId)
         {
             var booking = await _context.Bookings
-                .Include(b => b.Event)
-                .ThenInclude(e => e.Venue)
+                .Include(b => b.Event).ThenInclude(e => e.Venue)
                 .Include(b => b.Payment)
                 .FirstOrDefaultAsync(b => b.Id == bookingId);
+
+            if (booking == null) return NotFound();
+            return View(booking);
+        }
+
+        // GET: /Bookings/MyBookings
+        [HttpGet]
+        public async Task<IActionResult> MyBookings()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userBookings = await _context.Bookings
+                .Where(b => b.CustomerId == userId)
+                .Include(b => b.Event).ThenInclude(e => e.Venue)
+                .OrderByDescending(b => b.BookingDate)
+                .ToListAsync();
+
+            return View(userBookings);
+        }
+        // GET: /Bookings/ViewTicket/
+        public async Task<IActionResult> ViewTicket(int id)
+        {
+            var booking = await _context.Bookings
+                .Include(b => b.Event)
+                    .ThenInclude(e => e.Venue)
+                .Include(b => b.Payment)
+                .Include(b => b.Customer) // <-- FIX: Added this to load customer name for QR Code
+                .FirstOrDefaultAsync(b => b.Id == id);
 
             if (booking == null)
             {
                 return NotFound();
             }
 
+            string qrCodeText = $"BookingID:{booking.Id},Event:{booking.Event.Title},Name:{booking.Customer.FirstName} {booking.Customer.LastName},Tickets:{booking.TicketQuantity}";
+            QRCodeGenerator qrGenerator = new QRCodeGenerator();
+            QRCodeData qrCodeData = qrGenerator.CreateQrCode(qrCodeText, QRCodeGenerator.ECCLevel.Q);
+            PngByteQRCode qrCode = new PngByteQRCode(qrCodeData);
+            byte[] qrCodeImageBytes = qrCode.GetGraphic(20);
+            string qrCodeBase64 = Convert.ToBase64String(qrCodeImageBytes);
+
+            ViewBag.QRCodeImage = qrCodeBase64;
+
             return View(booking);
         }
+    
     }
 }
