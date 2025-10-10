@@ -1,6 +1,8 @@
 ﻿@model IEnumerable<StarEvents.Models.Booking>
 @{
     ViewData["Title"] = "My Bookings";
+    var upcomingBookings = Model?.Where(b => b.Event.StartDate > DateTime.Now).ToList() ?? new List<StarEvents.Models.Booking>();
+    var pastBookings = Model?.Where(b => b.Event.StartDate <= DateTime.Now).ToList() ?? new List<StarEvents.Models.Booking>();
 }
 
 <style>
@@ -12,17 +14,17 @@
         margin-bottom: 40px;
     }
 
-    .bookings-header h1 {
-        font-size: 2.5rem;
-        font-weight: 700;
-        color: #333;
-        margin-bottom: 10px;
-    }
+        .bookings-header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
 
-    .bookings-header p {
-        font-size: 1.1rem;
-        color: #666;
-    }
+        .bookings-header p {
+            font-size: 1.1rem;
+            color: #666;
+        }
 
     .bookings-tabs {
         display: flex;
@@ -42,16 +44,16 @@
         color: #666;
     }
 
-    .tab-button.active {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border-color: #667eea;
-    }
+        .tab-button.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+        }
 
-    .tab-button:hover:not(.active) {
-        border-color: #667eea;
-        color: #667eea;
-    }
+        .tab-button:hover:not(.active) {
+            border-color: #667eea;
+            color: #667eea;
+        }
 
     .bookings-stats {
         display: grid;
@@ -69,9 +71,9 @@
         transition: transform 0.3s ease;
     }
 
-    .stat-card:hover {
-        transform: translateY(-5px);
-    }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
 
     .stat-icon {
         font-size: 2.5rem;
@@ -99,10 +101,10 @@
         transition: all 0.3s ease;
     }
 
-    .booking-card:hover {
-        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-        transform: translateY(-3px);
-    }
+        .booking-card:hover {
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            transform: translateY(-3px);
+        }
 
     .booking-card-header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -123,7 +125,6 @@
         border-radius: 20px;
         font-size: 0.85rem;
         font-weight: 600;
-        background: rgba(255,255,255,0.2);
     }
 
     .status-confirmed {
@@ -241,11 +242,11 @@
         border: none;
     }
 
-    .btn-view:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        color: white;
-    }
+        .btn-view:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
 
     .btn-cancel {
         background: white;
@@ -253,10 +254,10 @@
         border: 2px solid #dc3545;
     }
 
-    .btn-cancel:hover {
-        background: #dc3545;
-        color: white;
-    }
+        .btn-cancel:hover {
+            background: #dc3545;
+            color: white;
+        }
 
     .btn-secondary {
         background: white;
@@ -264,10 +265,10 @@
         border: 2px solid #667eea;
     }
 
-    .btn-secondary:hover {
-        background: #667eea;
-        color: white;
-    }
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+        }
 
     .no-bookings {
         text-align: center;
@@ -308,10 +309,25 @@
         transition: all 0.3s ease;
     }
 
-    .btn-browse:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
-        color: white;
+        .btn-browse:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+
+    .section-divider {
+        margin: 50px 0 30px 0;
+        padding: 15px 0;
+        border-top: 2px solid #e0e0e0;
+    }
+
+    .section-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #333;
+        display: flex;
+        align-items: center;
+        gap: 10px;
     }
 
     @@media (max-width: 768px) {
@@ -385,7 +401,7 @@
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon">📅</div>
-                    <div class="stat-value">@Model.Count(b => b.Event.StartDate > DateTime.Now)</div>
+                    <div class="stat-value">@upcomingBookings.Count</div>
                     <div class="stat-label">Upcoming</div>
                 </div>
                 <div class="stat-card">
@@ -394,7 +410,249 @@
                     <div class="stat-label">Total Spent</div>
                 </div>
             </div>
-            }
+
             <!-- Filter Tabs -->
             <div class="bookings-tabs">
-                <button class="tab
+                <button class="tab-button active" onclick="filterBookings('all')">
+                    📋 All Bookings
+                </button>
+                <button class="tab-button" onclick="filterBookings('upcoming')">
+                    🔜 Upcoming (@upcomingBookings.Count)
+                </button>
+                <button class="tab-button" onclick="filterBookings('past')">
+                    📜 Past Events (@pastBookings.Count)
+                </button>
+            </div>
+
+            <!-- Upcoming Events Section -->
+            <div id="upcomingSection" class="bookings-section">
+                <div class="section-title">🔜 Upcoming Events</div>
+
+                @if (upcomingBookings.Any())
+                {
+                    foreach (var booking in upcomingBookings)
+                    {
+                        <div class="booking-card" data-category="upcoming">
+                            <div class="booking-card-header">
+                                <div class="booking-id">Booking #@booking.Id.ToString("D6")</div>
+                                <span class="booking-status status-@booking.Status.ToLower()">@booking.Status</span>
+                            </div>
+
+                            <div class="booking-card-body">
+                                <div class="event-info">
+                                    <img src="/images/default-event.jpg" alt="@booking.Event.Title" class="event-image" />
+                                    <div class="event-details">
+                                        <div class="event-name">@booking.Event.Title</div>
+                                        <div class="event-meta">
+                                            <span class="event-meta-item">📅 @booking.Event.StartDate.ToString("MMM dd, yyyy")</span>
+                                            <span class="event-meta-item">🕐 @booking.Event.StartDate.ToString("h:mm tt")</span>
+                                            <span class="event-meta-item">📍 @booking.Event.Venue.VenueName</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="booking-details-grid">
+                                    <div class="booking-detail-item">
+                                        <div class="booking-detail-label">Tickets</div>
+                                        <div class="booking-detail-value">@booking.TicketQuantity</div>
+                                    </div>
+                                    <div class="booking-detail-item">
+                                        <div class="booking-detail-label">Total Amount</div>
+                                        <div class="booking-detail-value">LKR @booking.TotalAmount.ToString("N2")</div>
+                                    </div>
+                                    <div class="booking-detail-item">
+                                        <div class="booking-detail-label">Booked On</div>
+                                        <div class="booking-detail-value">@booking.BookingDate.ToString("MMM dd, yyyy")</div>
+                                    </div>
+                                    <div class="booking-detail-item">
+                                        <div class="booking-detail-label">Points Earned</div>
+                                        <div class="booking-detail-value">⭐ @booking.PointsEarned</div>
+                                    </div>
+                                </div>
+
+                                <div class="booking-actions">
+                                    <a href="@Url.Action("ViewTicket", "Bookings", new { id = booking.Id })" class="btn-action btn-view">
+                                        🎫 View E-Ticket
+                                    </a>
+                                    <a href="@Url.Action("Details", "Events", new { id = booking.EventId })" class="btn-action btn-secondary">
+                                        ℹ️ Event Details
+                                    </a>
+                                    @if (booking.Status == "Confirmed" && booking.Event.StartDate > DateTime.Now.AddHours(48))
+                                    {
+                                        <button type="button" class="btn-action btn-cancel" onclick="showCancelModal(@booking.Id)">
+                                            ❌ Cancel Booking
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="no-bookings">
+                        <div class="no-bookings-icon">📅</div>
+                        <h3>No Upcoming Events</h3>
+                        <p>You don't have any upcoming bookings at the moment.</p>
+                        <a href="@Url.Action("Index", "Events")" class="btn-browse">Browse Events</a>
+                    </div>
+                }
+            </div>
+
+            <!-- Past Events Section -->
+            <div id="pastSection" class="bookings-section">
+                <div class="section-divider">
+                    <div class="section-title">📜 Past Events</div>
+                </div>
+
+                @if (pastBookings.Any())
+                {
+                    foreach (var booking in pastBookings)
+                    {
+                        <div class="booking-card" data-category="past">
+                            <div class="booking-card-header">
+                                <div class="booking-id">Booking #@booking.Id.ToString("D6")</div>
+                                <span class="booking-status status-completed">Completed</span>
+                            </div>
+
+                            <div class="booking-card-body">
+                                <div class="event-info">
+                                    <img src="/images/default-event.jpg" alt="@booking.Event.Title" class="event-image" />
+                                    <div class="event-details">
+                                        <div class="event-name">@booking.Event.Title</div>
+                                        <div class="event-meta">
+                                            <span class="event-meta-item">📅 @booking.Event.StartDate.ToString("MMM dd, yyyy")</span>
+                                            <span class="event-meta-item">🕐 @booking.Event.StartDate.ToString("h:mm tt")</span>
+                                            <span class="event-meta-item">📍 @booking.Event.Venue.VenueName</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="booking-details-grid">
+                                    <div class="booking-detail-item">
+                                        <div class="booking-detail-label">Tickets</div>
+                                        <div class="booking-detail-value">@booking.TicketQuantity</div>
+                                    </div>
+                                    <div class="booking-detail-item">
+                                        <div class="booking-detail-label">Total Amount</div>
+                                        <div class="booking-detail-value">LKR @booking.TotalAmount.ToString("N2")</div>
+                                    </div>
+                                    <div class="booking-detail-item">
+                                        <div class="booking-detail-label">Transaction ID</div>
+                                        <div class="booking-detail-value">@booking.Payment?.TransactionId</div>
+                                    </div>
+                                    <div class="booking-detail-item">
+                                        <div class="booking-detail-label">Points Earned</div>
+                                        <div class="booking-detail-value">⭐ @booking.PointsEarned</div>
+                                    </div>
+                                </div>
+
+                                <div class="booking-actions">
+                                    <a href="@Url.Action("ViewTicket", "Bookings", new { id = booking.Id })" class="btn-action btn-secondary">
+                                        📄 View Receipt
+                                    </a>
+                                    <a href="@Url.Action("Index", "Events")" class="btn-action btn-secondary">
+                                        🎫 Book Similar Event
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="no-bookings">
+                        <div class="no-bookings-icon">📜</div>
+                        <h3>No Past Events</h3>
+                        <p>You haven't attended any events yet.</p>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <!-- No Bookings at All -->
+            <div class="no-bookings">
+                <div class="no-bookings-icon">🎫</div>
+                <h3>No Bookings Yet</h3>
+                <p>You haven't made any bookings yet. Start exploring amazing events!</p>
+                <a href="@Url.Action("Index", "Events")" class="btn-browse">Browse Events</a>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Cancel Booking Modal -->
+<div class="modal fade" id="cancelModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cancel Booking</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="Cancel" asp-controller="Bookings" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="cancelBookingId" />
+                <div class="modal-body">
+                    <p><strong>Are you sure you want to cancel this booking?</strong></p>
+                    <div class="mb-3">
+                        <label class="form-label">Reason for cancellation (required):</label>
+                        <textarea name="reason" class="form-control" rows="3" required
+                                  placeholder="Please let us know why you're cancelling..."></textarea>
+                    </div>
+                    <div class="alert alert-warning">
+                        <strong>⚠️ Important:</strong>
+                        <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+                            <li>This action cannot be undone</li>
+                            <li>Refunds will be processed within 5-7 business days</li>
+                            <li>Points earned will be deducted</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Keep Booking</button>
+                    <button type="submit" class="btn btn-danger">Confirm Cancellation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Filter bookings by category
+        function filterBookings(category) {
+            // Update active tab
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Get all booking cards
+            const allCards = document.querySelectorAll('.booking-card');
+            const upcomingSection = document.getElementById('upcomingSection');
+            const pastSection = document.getElementById('pastSection');
+
+            if (category === 'all') {
+                // Show all
+                upcomingSection.style.display = 'block';
+                pastSection.style.display = 'block';
+            } else if (category === 'upcoming') {
+                // Show only upcoming
+                upcomingSection.style.display = 'block';
+                pastSection.style.display = 'none';
+            } else if (category === 'past') {
+                // Show only past
+                upcomingSection.style.display = 'none';
+                pastSection.style.display = 'block';
+            }
+        }
+
+        // Show cancel modal
+        function showCancelModal(bookingId) {
+            document.getElementById('cancelBookingId').value = bookingId;
+            var modal = new bootstrap.Modal(document.getElementById('cancelModal'));
+            modal.show();
+        }
+    </script>
+}
