@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using StarEvents.Data;
 
@@ -11,9 +12,11 @@ using StarEvents.Data;
 namespace StarEvents.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251010044315_CleanUpBookingModel")]
+    partial class CleanUpBookingModel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -240,12 +243,6 @@ namespace StarEvents.Migrations
                     b.Property<DateTime>("BookingDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("CancellationDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CancellationReason")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("CustomerId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
@@ -291,9 +288,7 @@ namespace StarEvents.Migrations
 
                     b.HasIndex("EventId");
 
-                    b.HasIndex("PaymentId")
-                        .IsUnique()
-                        .HasFilter("[PaymentId] IS NOT NULL");
+                    b.HasIndex("PaymentId");
 
                     b.ToTable("Bookings");
                 });
@@ -529,8 +524,8 @@ namespace StarEvents.Migrations
                         .IsRequired();
 
                     b.HasOne("StarEvents.Models.Payments.CustomerPayment", "Payment")
-                        .WithOne()
-                        .HasForeignKey("StarEvents.Models.Booking", "PaymentId")
+                        .WithMany()
+                        .HasForeignKey("PaymentId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Customer");

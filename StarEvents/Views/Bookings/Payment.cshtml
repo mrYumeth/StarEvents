@@ -1,123 +1,503 @@
-﻿@using System.Text.Json
-@{
-    ViewData["Title"] = "Payment & Checkout";
-    // ViewBag.BookingData contains the deserialized data from TempData["BookingData"]
-    dynamic bookingData = ViewBag.BookingData;
-    decimal totalAmount = bookingData != null ? (decimal)bookingData.TotalAmount : 0.00m;
+﻿@{
+    ViewData["Title"] = "Payment";
+    // This can be null if the page is refreshed, so we must check it.
+    var bookingData = ViewBag.BookingData as StarEvents.Controllers.BookingData;
+    var eventData = ViewBag.Event as StarEvents.Models.Event;
 }
 
-<div class="container mx-auto px-4 py-8 max-w-4xl font-sans">
-    <h2 class="text-4xl font-extrabold mb-8 text-indigo-700 text-center">Final Checkout</h2>
+<style>
+    .payment-container {
+        max-width: 1100px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
 
-    @* Error Message Display (e.g., if booking session expired) *@
+    .payment-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+        .payment-header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .payment-header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+    .payment-content {
+        display: grid;
+        grid-template-columns: 1fr 400px;
+        gap: 30px;
+    }
+
+    .payment-form-section {
+        background: white;
+        border-radius: 20px;
+        padding: 35px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 25px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .payment-methods {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+
+    .payment-method {
+        position: relative;
+    }
+
+        .payment-method input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+        }
+
+        .payment-method label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            height: 100%;
+        }
+
+        .payment-method input[type="radio"]:checked + label {
+            border-color: #667eea;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        }
+
+        .payment-method label .icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .payment-method label .name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        display: block;
+        font-weight: 600;
+        color: #555;
+        margin-bottom: 8px;
+        font-size: 0.95rem;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+        .form-input:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 15px;
+    }
+
+    .card-icons {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+    }
+
+    .card-icon {
+        font-size: 1.5rem;
+    }
+
+    .security-note {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 10px;
+        margin-top: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.9rem;
+        color: #666;
+    }
+
+    .order-summary {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        position: sticky;
+        top: 20px;
+    }
+
+    .summary-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 25px;
+        text-align: center;
+    }
+
+    .event-summary {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+    }
+
+    .event-name {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+    .event-details {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 5px;
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        font-size: 1rem;
+        color: #555;
+    }
+
+        .summary-row.subtotal {
+            border-top: 1px solid #e0e0e0;
+            margin-top: 10px;
+            padding-top: 15px;
+        }
+
+        .summary-row.discount {
+            color: #28a745;
+        }
+
+        .summary-row.total {
+            border-top: 2px solid #333;
+            margin-top: 10px;
+            padding-top: 15px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+    .btn-complete-payment {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 18px 40px;
+        border-radius: 25px;
+        font-size: 1.2rem;
+        font-weight: 600;
+        width: 100%;
+        margin-top: 20px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+        .btn-complete-payment:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+    .btn-back {
+        background: white;
+        color: #667eea;
+        border: 2px solid #667eea;
+        padding: 12px 30px;
+        border-radius: 25px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        margin-top: 15px;
+        transition: all 0.3s ease;
+        text-align: center;
+        width: 100%;
+    }
+
+        .btn-back:hover {
+            background: #f8f9fa;
+            color: #667eea;
+        }
+
+    .points-badge {
+        background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+        color: #333;
+        padding: 10px 15px;
+        border-radius: 25px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-align: center;
+        margin-top: 15px;
+    }
+
+    @@media (max-width: 968px) {
+        .payment-content {
+            grid-template-columns: 1fr;
+        }
+
+        .order-summary {
+            position: static;
+        }
+
+        .payment-methods {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .payment-methods {
+            grid-template-columns: 1fr;
+        }
+
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="payment-container">
+    <div class="payment-header">
+        <h1>💳 Complete Your Payment</h1>
+        <p>Secure payment powered by StarEvents</p>
+    </div>
+
     @if (TempData["ErrorMessage"] != null)
     {
-        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-lg shadow-md" role="alert">
-            <p class="font-bold">Error</p>
-            <p>@TempData["ErrorMessage"]</p>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     }
 
-    <div class="flex flex-col lg:flex-row gap-8">
-        @* Booking Summary Panel (Left Side) *@
-        <div class="lg:w-1/2 bg-white p-6 shadow-2xl rounded-xl border-t-4 border-indigo-600">
-            <h3 class="text-2xl font-bold text-gray-800 mb-5 border-b pb-3">Your Order</h3>
+    <form asp-action="ProcessPayment" asp-controller="Bookings" method="post" id="paymentForm">
+        @Html.AntiForgeryToken()
 
-            @if (bookingData != null)
-            {
-                <dl class="text-gray-700 space-y-4">
-                    <div class="flex justify-between items-center text-xl font-semibold">
-                        <dt class="text-indigo-600">Event:</dt>
-                        <dd class="text-right">@bookingData.EventName</dd>
-                    </div>
-                    <div class="flex justify-between items-center text-base">
-                        <dt>Location:</dt>
-                        <dd class="text-right">@bookingData.VenueName</dd>
-                    </div>
-                    <div class="flex justify-between items-center text-base">
-                        <dt>Date:</dt>
-                        <dd class="text-right">@bookingData.EventDate</dd>
-                    </div>
+        <div class="payment-content">
+            <!-- Payment Form -->
+            <div class="payment-form-section">
+                <h2 class="section-title">💳 Payment Method</h2>
 
-                    <hr class="my-4 border-gray-200" />
-
-                    <div class="flex justify-between items-center text-lg">
-                        <dt>Tickets (@bookingData.Quantity x LKR @string.Format("{0:N2}", (decimal)bookingData.UnitPrice))</dt>
-                        <dd class="font-medium">LKR @string.Format("{0:N2}", (decimal)bookingData.Subtotal)</dd>
-                    </div>
-                    <div class="flex justify-between items-center text-lg text-green-600">
-                        <dt>Discount (@(string.IsNullOrWhiteSpace(bookingData.PromoCode.ToString()) ? "None" : bookingData.PromoCode))</dt>
-                        <dd>- LKR @string.Format("{0:N2}", (decimal)bookingData.DiscountAmount)</dd>
-                    </div>
-
-                    <hr class="my-4 border-gray-300 border-dashed" />
-
-                    <div class="flex justify-between items-center text-3xl font-extrabold text-indigo-700 pt-2 bg-indigo-50 p-2 rounded-lg">
-                        <dt>TOTAL PAYABLE</dt>
-                        <dd>LKR @string.Format("{0:N2}", totalAmount)</dd>
-                    </div>
-
-                    <p class="text-sm text-center text-gray-500 mt-4 pt-2 border-t">
-                        <span class="font-bold text-yellow-600">@bookingData.PointsToEarn Loyalty Points</span> will be added to your account upon confirmation.
-                    </p>
-                </dl>
-            }
-            else
-            {
-                <p class="text-red-500">Could not retrieve booking details. Please go back to the event page and try again.</p>
-            }
-        </div>
-
-        @* Payment Form Panel (Right Side) *@
-        <div class="lg:w-1/2 bg-gray-50 p-6 shadow-2xl rounded-xl">
-            <h3 class="text-2xl font-bold mb-5 text-gray-800 border-b pb-3">Choose Payment Method</h3>
-
-            <form asp-controller="Bookings" asp-action="ProcessPayment" method="post" class="space-y-6">
-                @* Payment Method Selection *@
-                <div>
-                    <div class="space-y-3">
-                        <label class="flex items-center p-4 border border-indigo-300 rounded-xl bg-white shadow-sm hover:shadow-lg transition duration-200 cursor-pointer">
-                            <input type="radio" name="paymentMethod" value="CreditCard" required class="form-radio h-5 w-5 text-indigo-600 focus:ring-indigo-500" checked />
-                            <span class="ml-4 text-gray-900 font-semibold">Credit/Debit Card</span>
-                            <span class="ml-auto text-gray-500">VISA, MasterCard</span>
+                <!-- Payment Method Selection -->
+                <div class="payment-methods">
+                    <div class="payment-method">
+                        <input type="radio" name="paymentMethod" id="creditCard" value="CreditCard" checked />
+                        <label for="creditCard">
+                            <div class="icon">💳</div>
+                            <div class="name">Credit Card</div>
                         </label>
-                        <label class="flex items-center p-4 border border-gray-300 rounded-xl bg-white shadow-sm hover:shadow-lg transition duration-200 cursor-pointer">
-                            <input type="radio" name="paymentMethod" value="MobileMoney" required class="form-radio h-5 w-5 text-indigo-600 focus:ring-indigo-500" />
-                            <span class="ml-4 text-gray-900 font-semibold">Mobile Money / Wallets</span>
-                            <span class="ml-auto text-gray-500">EziPay, mCash</span>
+                    </div>
+                    <div class="payment-method">
+                        <input type="radio" name="paymentMethod" id="debitCard" value="DebitCard" />
+                        <label for="debitCard">
+                            <div class="icon">💳</div>
+                            <div class="name">Debit Card</div>
+                        </label>
+                    </div>
+                    <div class="payment-method">
+                        <input type="radio" name="paymentMethod" id="paypal" value="PayPal" />
+                        <label for="paypal">
+                            <div class="icon">🅿️</div>
+                            <div class="name">PayPal</div>
                         </label>
                     </div>
                 </div>
 
-                @* Card Details Fields (Basic placeholders, actual implementation needs validation) *@
-                <div id="card-details-section" class="space-y-4">
-                    <div>
-                        <label for="cardName" class="block text-sm font-medium text-gray-700">Name on Card</label>
-                        <input type="text" id="cardName" name="cardName" class="mt-1 block w-full rounded-lg border border-gray-300 shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Cardholder Name" required>
-                    </div>
-                    <div>
-                        <label for="cardNumber" class="block text-sm font-medium text-gray-700">Card Number</label>
-                        <input type="text" id="cardNumber" name="cardNumber" class="mt-1 block w-full rounded-lg border border-gray-300 shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500" placeholder="XXXX XXXX XXXX XXXX" required>
-                    </div>
-                    <div class="flex gap-4">
-                        <div class="w-1/2">
-                            <label for="expiryDate" class="block text-sm font-medium text-gray-700">Expiry Date</label>
-                            <input type="text" id="expiryDate" name="expiryDate" class="mt-1 block w-full rounded-lg border border-gray-300 shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500" placeholder="MM/YY" required>
+                <!-- Card Details -->
+                <div id="cardDetails">
+                    <div class="form-group">
+                        <label class="form-label" for="cardNumber">Card Number</label>
+                        <input type="text" id="cardNumber" name="cardNumber" class="form-input"
+                               placeholder="1234 5678 9012 3456" maxlength="19"
+                               pattern="[0-9\s]{13,19}" required />
+                        <div class="card-icons">
+                            <span class="card-icon">💳</span>
+                            <span class="card-icon">🔒</span>
                         </div>
-                        <div class="w-1/2">
-                            <label for="cvv" class="block text-sm font-medium text-gray-700">CVV</label>
-                            <input type="text" id="cvv" name="cvv" class="mt-1 block w-full rounded-lg border border-gray-300 shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500" placeholder="123" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="cardName">Cardholder Name</label>
+                        <input type="text" id="cardName" name="cardName" class="form-input"
+                               placeholder="John Doe" required />
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="expiryDate">Expiry Date</label>
+                            <input type="text" id="expiryDate" name="expiryDate" class="form-input"
+                                   placeholder="MM/YY" maxlength="5" pattern="[0-9]{2}/[0-9]{2}" required />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="cvv">CVV</label>
+                            <input type="text" id="cvv" name="cvv" class="form-input"
+                                   placeholder="123" maxlength="4" pattern="[0-9]{3,4}" required />
                         </div>
                     </div>
                 </div>
 
-                <div class="pt-6">
-                    <button type="submit" class="w-full py-4 px-4 border border-transparent rounded-lg shadow-lg text-xl font-bold text-white bg-green-600 hover:bg-green-700 transition duration-150 transform hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-opacity-50">
-                        CONFIRM & PAY LKR @string.Format("{0:N2}", totalAmount)
-                    </button>
+                <!-- PayPal Section (Hidden by default) -->
+                <div id="paypalDetails" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label" for="paypalEmail">PayPal Email</label>
+                        <input type="email" id="paypalEmail" name="paypalEmail" class="form-input"
+                               placeholder="your@email.com" />
+                    </div>
+                    <div class="security-note">
+                        <span>🔒</span>
+                        <span>You will be redirected to PayPal to complete your payment securely.</span>
+                    </div>
                 </div>
-            </form>
+
+                <div class="security-note">
+                    <span>🔒</span>
+                    <span>Your payment information is encrypted and secure. We never store your card details.</span>
+                </div>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="order-summary">
+                <h3 class="summary-title">📋 Order Summary</h3>
+
+                <div class="event-summary">
+                    <div class="event-name">@bookingData.EventName</div>
+                    <div class="event-details">📅 @bookingData.EventDate</div>
+                    <div class="event-details">📍 @bookingData.VenueName</div>
+                    <div class="event-details">🎫 @bookingData.TicketQuantity Ticket(s)</div>
+                </div>
+
+                <div class="summary-row">
+                    <span>Quantity:</span>
+                    <span>@bookingData.TicketQuantity</span>
+                </div>
+
+                <div class="summary-row">
+                    <span>Quantity:</span>
+                    <span>@bookingData.TicketQuantity</span>
+                </div>
+
+                <div class="summary-row subtotal">
+                    <span>Subtotal:</span>
+                    <span>LKR @((bookingData.UnitPrice * bookingData.TicketQuantity).ToString("N2"))</span>
+                </div>
+
+                @if (Convert.ToDecimal(bookingData.DiscountAmount) > 0)
+                {
+                    <div class="summary-row discount">
+                        <span>Discount:</span>
+                        <span>- LKR @Convert.ToDecimal(bookingData.DiscountAmount).ToString("N2")</span>
+                    </div>
+                }
+
+                <div class="summary-row total">
+                    <span>Total Amount:</span>
+                    <span>LKR @Convert.ToDecimal(bookingData.TotalAmount).ToString("N2")</span>
+                </div>
+
+                <div class="points-badge">
+                    ⭐ You'll earn @bookingData.PointsToEarn loyalty points!
+                </div>
+
+                <button type="submit" class="btn-complete-payment">
+                    Complete Payment →
+                </button>
+
+                <a href="@Url.Action("Book", "Bookings", new { id = bookingData.EventId })" class="btn-back">
+                    ← Back to Booking
+                </a>
+            </div>
         </div>
-    </div>
-
+    </form>
 </div>
+
+@section Scripts {
+    <script>
+        // Payment method toggle
+        document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const cardDetails = document.getElementById('cardDetails');
+                const paypalDetails = document.getElementById('paypalDetails');
+
+                if (this.value === 'PayPal') {
+                    cardDetails.style.display = 'none';
+                    paypalDetails.style.display = 'block';
+
+                    // Make card fields not required
+                    document.getElementById('cardNumber').required = false;
+                    document.getElementById('cardName').required = false;
+                    document.getElementById('expiryDate').required = false;
+                    document.getElementById('cvv').required = false;
+                } else {
+                    cardDetails.style.display = 'block';
+                    paypalDetails.style.display = 'none';
+
+                    // Make card fields required
+                    document.getElementById('cardNumber').required = true;
+                    document.getElementById('cardName').required = true;
+                    document.getElementById('expiryDate').required = true;
+                    document.getElementById('cvv').required = true;
+                }
+            });
+        });
+
+        // Card number formatting
+        document.getElementById('cardNumber').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\s/g, '');
+            let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
+            e.target.value = formattedValue;
+        });
+
+        // Expiry date formatting
+        document.getElementById('expiryDate').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 2) {
+                value = value.substring(0, 2) + '/' + value.substring(2, 4);
+            }
+            e.target.value = value;
+        });
+
+        // Form submission
+        document.getElementById('paymentForm').addEventListener('submit', function(e) {
+            // Add loading state
+            const btn = document.querySelector('.btn-complete-payment');
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+            btn.disabled = true;
+        });
+    </script>
+}

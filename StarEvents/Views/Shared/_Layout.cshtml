@@ -1,21 +1,28 @@
-﻿<!DOCTYPE html>
+﻿@* Add the line below to import the necessary library for SignInManager *@
+@using Microsoft.AspNetCore.Identity
+@using StarEvents.Models
+
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - StarEvents</title>
-    <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/StarEvents.styles.css" asp-append-version="true" />
-
-    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
     <style>
         body {
             background-color: #2b2b2b;
             color: #faf5ef;
+        }
+
+        main {
+            min-height: 80vh;
         }
 
         header, footer {
@@ -38,10 +45,11 @@
             margin-top: 20px;
         }
     </style>
-
     @RenderSection("Styles", required: false)
 </head>
 <body>
+    @inject SignInManager<ApplicationUser> SignInManager
+
     <header>
         <nav class="navbar navbar-expand-sm navbar-dark border-bottom box-shadow mb-3">
             <div class="container-fluid">
@@ -55,17 +63,17 @@
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
 
-                        @if (User.Identity.IsAuthenticated)
+                        @if (SignInManager.IsSignedIn(User))
                         {
+                            // --- LINKS FOR ALL LOGGED-IN USERS ---
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Home" asp-action="Index">Home</a>
+                            </li>
+
                             @if (User.IsInRole("Customer"))
                             {
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Customer" asp-action="Dashboard">Dashboard</a>
-                                </li>
+                                // --- CUSTOMER-SPECIFIC LINKS ---
                                 <li class="nav-item">
                                     <a class="nav-link" asp-controller="Events" asp-action="Index">Browse Events</a>
                                 </li>
@@ -75,74 +83,34 @@
                             }
                             else if (User.IsInRole("Organizer"))
                             {
+                                // --- ORGANIZER-SPECIFIC LINKS ---
                                 <li class="nav-item">
                                     <a class="nav-link" asp-controller="Organizers" asp-action="MyEvents">My Events</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Organizers" asp-action="Create">Create Event</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Organizers" asp-action="Reports">Reports</a>
                                 </li>
                             }
                             else if (User.IsInRole("Admin"))
                             {
+                                // --- ADMIN-SPECIFIC LINKS ---
                                 <li class="nav-item">
                                     <a class="nav-link" asp-controller="Admin" asp-action="Dashboard">Admin Dashboard</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Admin" asp-action="ManageEvents">Manage Events</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Admin" asp-action="ManageUsers">Manage Users</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Admin" asp-action="Reports">Reports</a>
                                 </li>
                             }
                         }
                         else
                         {
+                            // --- LINKS FOR GUESTS (NOT LOGGED IN) ---
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Home" asp-action="Index">Home</a>
+                            </li>
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Events" asp-action="Index">Browse Events</a>
                             </li>
                         }
-
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
                     </ul>
 
-                    <ul class="navbar-nav">
-                        @if (User.Identity.IsAuthenticated)
-                        {
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
-                                   data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="fas fa-user-circle"></i> @User.Identity.Name
-                                </a>
-                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown" style="background-color: #1f1f1f;">
-                                    <li><a class="dropdown-item" asp-controller="Account" asp-action="Profile" style="color: #faf5ef;">My Profile</a></li>
-                                    <li><a class="dropdown-item" asp-controller="Account" asp-action="Settings" style="color: #faf5ef;">Settings</a></li>
-                                    <li><hr class="dropdown-divider" style="border-color: #444;"></li>
-                                    <li>
-                                        <form method="post" asp-controller="Account" asp-action="Logout">
-                                            <button type="submit" class="dropdown-item" style="color: #faf5ef;">Logout</button>
-                                        </form>
-                                    </li>
-                                </ul>
-                            </li>
-                        }
-                        else
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link" asp-area="Identity" asp-page="/Account/Login">Login</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" asp-area="Identity" asp-page="/Account/Register">Register</a>
-                            </li>
-                        }
-                    </ul>
+                    @* This partial view correctly handles showing the user's name and Login/Logout links *@
+                    <partial name="_LoginPartial" />
+
                 </div>
             </div>
         </nav>

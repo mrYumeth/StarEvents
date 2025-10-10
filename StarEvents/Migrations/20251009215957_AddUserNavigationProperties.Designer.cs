@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using StarEvents.Data;
 
@@ -11,9 +12,11 @@ using StarEvents.Data;
 namespace StarEvents.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251009215957_AddUserNavigationProperties")]
+    partial class AddUserNavigationProperties
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -244,14 +247,15 @@ namespace StarEvents.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("CancellationReason")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("CustomerId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
-
-                    b.Property<int?>("CustomerPaymentId")
-                        .HasColumnType("int");
 
                     b.Property<decimal>("DiscountAmount")
                         .HasColumnType("decimal(18,2)");
@@ -259,13 +263,17 @@ namespace StarEvents.Migrations
                     b.Property<int>("EventId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("PaymentId")
+                    b.Property<int>("PaymentId")
                         .HasColumnType("int");
 
                     b.Property<int>("PointsEarned")
                         .HasColumnType("int");
 
                     b.Property<string>("QRCodeUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("SpecialRequests")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
@@ -283,17 +291,16 @@ namespace StarEvents.Migrations
                     b.Property<decimal>("UnitPrice")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CustomerId");
 
-                    b.HasIndex("CustomerPaymentId");
-
                     b.HasIndex("EventId");
 
-                    b.HasIndex("PaymentId")
-                        .IsUnique()
-                        .HasFilter("[PaymentId] IS NOT NULL");
+                    b.HasIndex("PaymentId");
 
                     b.ToTable("Bookings");
                 });
@@ -518,10 +525,6 @@ namespace StarEvents.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("StarEvents.Models.Payments.CustomerPayment", null)
-                        .WithMany("Bookings")
-                        .HasForeignKey("CustomerPaymentId");
-
                     b.HasOne("StarEvents.Models.Event", "Event")
                         .WithMany("Bookings")
                         .HasForeignKey("EventId")
@@ -529,9 +532,10 @@ namespace StarEvents.Migrations
                         .IsRequired();
 
                     b.HasOne("StarEvents.Models.Payments.CustomerPayment", "Payment")
-                        .WithOne()
-                        .HasForeignKey("StarEvents.Models.Booking", "PaymentId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .WithMany("Bookings")
+                        .HasForeignKey("PaymentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("Customer");
 

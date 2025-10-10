@@ -25,5 +25,8 @@ namespace StarEvents.ViewModels
         // Ticket Details (Mock/Placeholder for now, required for Task 5/6)
         public int AvailableTickets { get; set; }
         public string TicketPrice { get; set; }
+
+        public string ImageUrl { get; set; }
+
     }
 }

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using StarEvents.Data;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using StarEvents.Services;
+using StarEvents.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 

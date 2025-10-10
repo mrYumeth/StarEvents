@@ -1,0 +1,477 @@
+﻿@model StarEvents.Models.Booking
+@{
+    ViewData["Title"] = "Booking Confirmed";
+}
+
+<style>
+    .confirmation-container {
+        max-width: 900px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    .success-animation {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    .success-checkmark {
+        width: 100px;
+        height: 100px;
+        margin: 0 auto 20px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: scaleIn 0.5s ease-out;
+    }
+
+        .success-checkmark::after {
+            content: "✓";
+            font-size: 3rem;
+            color: white;
+            font-weight: 700;
+        }
+
+    @@keyframes scaleIn {
+        0% {
+            transform: scale(0);
+        }
+
+        50% {
+            transform: scale(1.1);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    .success-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+    .success-subtitle {
+        font-size: 1.2rem;
+        color: #666;
+        margin-bottom: 30px;
+    }
+
+    .confirmation-card {
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+
+    .booking-id-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 25px;
+        border-radius: 15px;
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .booking-id-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        margin-bottom: 5px;
+    }
+
+    .booking-id-value {
+        font-size: 2rem;
+        font-weight: 700;
+        letter-spacing: 2px;
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .info-item {
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 12px;
+    }
+
+    .info-label {
+        font-size: 0.85rem;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 5px;
+    }
+
+    .info-value {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .qr-section {
+        text-align: center;
+        padding: 30px;
+        background: #f8f9fa;
+        border-radius: 15px;
+        margin-bottom: 30px;
+    }
+
+    .qr-code {
+        width: 250px;
+        height: 250px;
+        margin: 0 auto 20px;
+        padding: 20px;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+        .qr-code img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+    .qr-instructions {
+        font-size: 0.95rem;
+        color: #666;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    .payment-summary {
+        background: #f8f9fa;
+        padding: 25px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        font-size: 1rem;
+    }
+
+        .summary-row.total {
+            border-top: 2px solid #333;
+            margin-top: 10px;
+            padding-top: 15px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+    .action-buttons {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+        margin-top: 30px;
+    }
+
+    .btn-primary-action {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 25px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+        .btn-primary-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+
+    .btn-secondary-action {
+        background: white;
+        color: #667eea;
+        border: 2px solid #667eea;
+        padding: 15px 30px;
+        border-radius: 25px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+        .btn-secondary-action:hover {
+            background: #f8f9fa;
+            color: #667eea;
+        }
+
+    .points-earned {
+        background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+        color: #333;
+        padding: 20px;
+        border-radius: 12px;
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+        .points-earned .icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .points-earned .text {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+    .next-steps {
+        background: #e3f2fd;
+        padding: 25px;
+        border-radius: 12px;
+        margin-top: 30px;
+    }
+
+        .next-steps h3 {
+            color: #1976d2;
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .next-steps ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .next-steps li {
+            padding: 10px 0;
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+            .next-steps li::before {
+                content: "✓";
+                color: #1976d2;
+                font-weight: 700;
+                font-size: 1.2rem;
+            }
+
+    .email-notice {
+        background: #fff3cd;
+        padding: 15px;
+        border-radius: 10px;
+        text-align: center;
+        font-size: 0.95rem;
+        color: #856404;
+        margin-bottom: 20px;
+    }
+
+    @@media (max-width: 768px) {
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .action-buttons {
+            grid-template-columns: 1fr;
+        }
+
+        .success-title {
+            font-size: 2rem;
+        }
+
+        .qr-code {
+            width: 200px;
+            height: 200px;
+        }
+    }
+</style>
+
+<div class="confirmation-container">
+    <!-- Success Animation -->
+    <div class="success-animation">
+        <div class="success-checkmark"></div>
+        <h1 class="success-title">🎉 Booking Confirmed!</h1>
+        <p class="success-subtitle">Your tickets have been successfully booked</p>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Confirmation Card -->
+    <div class="confirmation-card">
+        <!-- Booking ID -->
+        <div class="booking-id-section">
+            <div class="booking-id-label">Booking Reference</div>
+            <div class="booking-id-value">#@Model.Id.ToString("D6")</div>
+        </div>
+
+        <!-- Email Notice -->
+        <div class="email-notice">
+            📧 A confirmation email with your e-ticket has been sent to your registered email address.
+        </div>
+
+        <!-- Points Earned -->
+        @if (Model.PointsEarned > 0)
+        {
+            <div class="points-earned">
+                <div class="icon">⭐</div>
+                <div class="text">You earned @Model.PointsEarned loyalty points!</div>
+            </div>
+        }
+
+        <!-- Event Details -->
+        <h2 class="section-title">🎫 Event Details</h2>
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">Event Name</div>
+                <div class="info-value">@Model.Event.Title</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Date & Time</div>
+                <div class="info-value">@Model.Event.StartDate.ToString("MMM dd, yyyy h:mm tt")</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Venue</div>
+                <div class="info-value">@Model.Event.Venue.VenueName</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Location</div>
+                <div class="info-value">@Model.Event.Venue.City</div>
+            </div>
+        </div>
+
+        <!-- Booking Details -->
+        <h2 class="section-title">📋 Booking Details</h2>
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">Number of Tickets</div>
+                <div class="info-value">@Model.TicketQuantity Ticket(s)</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Booking Date</div>
+                <div class="info-value">@Model.BookingDate.ToString("MMM dd, yyyy h:mm tt")</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Payment Method</div>
+                <div class="info-value">@Model.Payment.PaymentMethod</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Transaction ID</div>
+                <div class="info-value">@Model.Payment.TransactionId</div>
+            </div>
+        </div>
+
+        <!-- Payment Summary -->
+        <h2 class="section-title">💰 Payment Summary</h2>
+        <div class="payment-summary">
+            <div class="summary-row">
+                <span>Unit Price:</span>
+                <span>LKR @Model.UnitPrice.ToString("N2")</span>
+            </div>
+            <div class="summary-row">
+                <span>Quantity:</span>
+                <span>@Model.TicketQuantity</span>
+            </div>
+            <div class="summary-row">
+                <span>Subtotal:</span>
+                <span>LKR @(Model.UnitPrice* Model.TicketQuantity).ToString("N2")</span>
+            </div>
+            @if (Model.DiscountAmount > 0)
+            {
+                <div class="summary-row" style="color: #28a745;">
+                    <span>Discount:</span>
+                    <span>- LKR @Model.DiscountAmount.ToString("N2")</span>
+                </div>
+            }
+            <div class="summary-row total">
+                <span>Total Paid:</span>
+                <span>LKR @Model.TotalAmount.ToString("N2")</span>
+            </div>
+        </div>
+
+        <!-- QR Code Section -->
+        <h2 class="section-title">📱 Your E-Ticket QR Code</h2>
+        <div class="qr-section">
+            <div class="qr-code">
+                <!-- Placeholder QR Code - Replace with actual QR generation -->
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=BOOKING-@Model.Id-@Model.Payment.TransactionId"
+                     alt="Booking QR Code" />
+            </div>
+            <p class="qr-instructions">
+                📲 Show this QR code at the venue entrance for quick check-in.
+                You can also access your ticket anytime from "My Bookings".
+            </p>
+        </div>
+
+        <!-- Next Steps -->
+        <div class="next-steps">
+            <h3>📌 What's Next?</h3>
+            <ul>
+                <li>Check your email for the confirmation and e-ticket</li>
+                <li>Save or print your QR code for entry</li>
+                <li>Arrive at the venue 30 minutes before the event starts</li>
+                <li>Show your QR code at the entrance</li>
+                <li>Enjoy the event! 🎉</li>
+            </ul>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <a href="@Url.Action("ViewTicket", "Bookings", new { id = Model.Id })" class="btn-primary-action">
+                📄 View Full Ticket
+            </a>
+            <a href="@Url.Action("MyBookings", "Bookings")" class="btn-secondary-action">
+                📋 My Bookings
+            </a>
+        </div>
+
+        <div class="action-buttons" style="margin-top: 15px;">
+            <a href="@Url.Action("Index", "Events")" class="btn-secondary-action">
+                🎫 Browse More Events
+            </a>
+            <a href="@Url.Action("Dashboard", "Customer")" class="btn-secondary-action">
+                🏠 Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Auto-print option (optional)
+        document.addEventListener('DOMContentLoaded', function() {
+            // You can add auto-print functionality here if needed
+            console.log('Booking confirmed successfully!');
+        });
+    </script>
+}

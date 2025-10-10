@@ -15,5 +15,7 @@
 
         // Placeholder for displaying ticket price information
         public string PriceDisplay { get; set; }
+
+        public string ImageUrl { get; set; }// Property for the event's image
     }
 }
