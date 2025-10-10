@@ -1,9 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StarEvents.Data;
 using StarEvents.Models;
+using StarEvents.ViewModels;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -36,69 +37,58 @@ namespace StarEvents.Controllers
         // 1. Dashboard - The main customer landing page after login.
         // ----------------------------------------------------------------------
         // GET: /Customer/Dashboard
+        // In Controllers/CustomerController.cs
+
         public async Task<IActionResult> Dashboard()
         {
-            // Get the current logged-in user
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                return RedirectToPage("/Account/Login", new { area = "Identity" });
+                return Challenge(); // Not found or not logged in
             }
 
-            // Get customer's bookings
-            var bookings = await _context.Bookings
+            // --- Data Fetching ---
+            // Get all of the user's relevant bookings in one query
+            var allUserBookings = await _context.Bookings
+                .Where(b => b.CustomerId == user.Id)
                 .Include(b => b.Event)
                     .ThenInclude(e => e.Venue)
-                .Where(b => b.CustomerId == user.Id)
                 .OrderByDescending(b => b.BookingDate)
                 .ToListAsync();
 
-            // Calculate statistics
-            ViewBag.TotalBookings = bookings.Count;
-            ViewBag.UpcomingEvents = bookings.Count(b => b.Event.StartDate > DateTime.Now);
-
-            // Get loyalty points (assuming ApplicationUser has LoyaltyPoints property)
-            // If not, you can calculate it from bookings: bookings.Sum(b => b.PointsEarned)
-            ViewBag.LoyaltyPoints = bookings.Sum(b => b.PointsEarned);
-
-            // Calculate total spent
-            ViewBag.TotalSpent = bookings
-                .Where(b => b.Status == "Confirmed" || b.Status == "Completed")
-                .Sum(b => b.TotalAmount)
-                .ToString("N2");
-
-            // Get recent bookings (last 5)
-            var recentBookings = bookings.Take(5).Select(b => new
-            {
-                BookingId = b.Id,
-                EventName = b.Event.Title,
-                EventDate = b.Event.StartDate,
-                TicketQuantity = b.TicketQuantity,
-                TotalAmount = b.TotalAmount.ToString("N2"),
-                Status = b.Status
-            }).ToList();
-
-            ViewBag.RecentBookings = recentBookings;
-
-            // Get featured upcoming events (top 3 events sorted by date)
-            var upcomingEvents = await _context.Events
+            // Get the top 3 upcoming events for the "Featured" section
+            var featuredEvents = await _context.Events
+                .Where(e => e.IsActive && e.StartDate > DateTime.Now)
                 .Include(e => e.Venue)
-                .Where(e => e.StartDate > DateTime.Now && e.IsActive)
                 .OrderBy(e => e.StartDate)
                 .Take(3)
-                .Select(e => new
-                {
-                    EventId = e.Id,
-                    EventName = e.Title,
-                    EventDate = e.StartDate,
-                    Location = e.Venue != null ? e.Venue.VenueName : "TBA",
-                    Price = e.TicketPrice.ToString("N2"),
-                    ImageUrl = string.IsNullOrEmpty(e.ImageUrl) ? "/images/default-event.jpg" : e.ImageUrl
-                })
                 .ToListAsync();
 
-            // Pass the upcoming events to the view
-            return View(upcomingEvents);
+            // --- Logic Fixes ---
+            var confirmedBookings = allUserBookings.Where(b => b.Status == "Confirmed" || b.Status == "Completed").ToList();
+
+            // --- Populate the ViewModel ---
+            var dashboardViewModel = new CustomerDashboardViewModel
+            {
+                // Use the user's FirstName for a personal touch
+                UserName = user.FirstName,
+
+                // Calculate stats based on confirmed/completed bookings
+                TotalBookings = confirmedBookings.Count(),
+                UpcomingEventsCount = confirmedBookings.Count(b => b.Event.StartDate > DateTime.Now),
+                TotalSpent = confirmedBookings.Sum(b => b.TotalAmount),
+
+                // FIX: Get current loyalty points directly from the user object
+                LoyaltyPoints = user.LoyaltyPoints,
+
+                // FIX: Get the 5 most recent *confirmed* bookings for the list
+                RecentBookings = allUserBookings.Where(b => b.Status == "Confirmed").Take(5).ToList(),
+
+                // Assign the featured events list
+                FeaturedEvents = featuredEvents
+            };
+
+            return View(dashboardViewModel);
         }
 
         // ----------------------------------------------------------------------
