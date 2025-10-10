@@ -57,5 +57,8 @@ namespace StarEvents.Models
         public int? PaymentId { get; set; }
         [ForeignKey("PaymentId")]
         public virtual CustomerPayment? Payment { get; set; }
+        public DateTime? CancellationDate { get; set; }
+        public string? CancellationReason { get; set; }
+
     }
 }

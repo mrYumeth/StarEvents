@@ -275,6 +275,45 @@ namespace StarEvents.Controllers
 
             return View(booking);
         }
-    
+
+        //Cancel
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Cancel(int id, string reason)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var booking = await _context.Bookings
+                .Include(b => b.Event)
+                .FirstOrDefaultAsync(b => b.Id == id && b.CustomerId == userId);
+
+            if (booking == null)
+            {
+                TempData["ErrorMessage"] = "Booking not found.";
+                return RedirectToAction("MyBookings");
+            }
+
+            // Server-side validation
+            if (booking.Status != "Confirmed" || booking.Event.StartDate <= DateTime.Now.AddHours(48))
+            {
+                TempData["ErrorMessage"] = "This booking can no longer be cancelled.";
+                return RedirectToAction("MyBookings");
+            }
+
+            // --- YOUR NEW LOGIC ---
+            // 1. Update the booking's status and save cancellation details
+            booking.Status = "Cancelled";
+            booking.CancellationReason = reason;
+            booking.CancellationDate = DateTime.UtcNow;
+
+            // 2. Add the tickets back to the event
+            booking.Event.AvailableTickets += booking.TicketQuantity;
+
+            // 3. Save changes
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = $"Booking #{booking.Id} has been successfully cancelled.";
+            return RedirectToAction("MyBookings");
+        }
+
     }
 }

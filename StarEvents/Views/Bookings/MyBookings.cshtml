@@ -1,8 +1,8 @@
 ﻿@model IEnumerable<StarEvents.Models.Booking>
 @{
     ViewData["Title"] = "My Bookings";
-    var upcomingBookings = Model?.Where(b => b.Event.StartDate > DateTime.Now).ToList() ?? new List<StarEvents.Models.Booking>();
-    var pastBookings = Model?.Where(b => b.Event.StartDate <= DateTime.Now).ToList() ?? new List<StarEvents.Models.Booking>();
+    var upcomingBookings = Model?.Where(b => b.Event.StartDate >= DateTime.Now && b.Status == "Confirmed").ToList() ?? new();
+    var pastBookings = Model?.Where(b => b.Event.StartDate < DateTime.Now || b.Status != "Confirmed").ToList() ?? new();
 }
 
 <style>
@@ -525,6 +525,19 @@
                                             <span class="event-meta-item">🕐 @booking.Event.StartDate.ToString("h:mm tt")</span>
                                             <span class="event-meta-item">📍 @booking.Event.Venue.VenueName</span>
                                         </div>
+                                    </div>
+                                </div>
+
+                                <div class="booking-card-body">
+                                    @if (booking.Status == "Cancelled")
+                                    {
+                                        <div class="alert alert-danger mt-3">
+                                            <strong>Cancelled on:</strong> @booking.CancellationDate?.ToString("MMM dd, yyyy")<br>
+                                            <strong>Reason:</strong> @booking.CancellationReason
+                                        </div>
+                                    }
+
+                                    <div class="booking-actions">
                                     </div>
                                 </div>
 
