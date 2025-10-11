@@ -325,12 +325,15 @@ namespace StarEvents.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("ImageUrl")
-                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
+
+                    b.Property<string>("Location")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("OrganizerId")
                         .IsRequired()
@@ -355,8 +358,12 @@ namespace StarEvents.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("VenueId")
+                    b.Property<int?>("VenueId")
                         .HasColumnType("int");
+
+                    b.Property<string>("VenueName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -548,15 +555,11 @@ namespace StarEvents.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("StarEvents.Models.Venue", "Venue")
+                    b.HasOne("StarEvents.Models.Venue", null)
                         .WithMany("Events")
-                        .HasForeignKey("VenueId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .HasForeignKey("VenueId");
 
                     b.Navigation("Organizer");
-
-                    b.Navigation("Venue");
                 });
 
             modelBuilder.Entity("StarEvents.Models.Payments.CustomerPayment", b =>

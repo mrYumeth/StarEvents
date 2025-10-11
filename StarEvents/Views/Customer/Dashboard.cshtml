@@ -352,7 +352,7 @@
                                     <span class="event-date">📅 @evt.StartDate.ToString("MMM dd, yyyy")</span>
                                     <h3 class="event-title">@evt.Title</h3>
                                     <p class="event-location">
-                                        <i class="fas fa-map-marker-alt"></i> @evt.Venue?.VenueName
+                                        <i class="fas fa-map-marker-alt"></i> @evt.Location
                                     </p>
                                     <div class="event-price">LKR @evt.TicketPrice.ToString("N2")</div>
                                     <a href="@Url.Action("Details", "Events", new { id = evt.Id })" class="btn btn-book">View Details</a>

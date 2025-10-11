@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic; // Add this using statement
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.AspNetCore.Http;
 using StarEvents.Data;
 
 namespace StarEvents.Models
@@ -8,22 +10,27 @@ namespace StarEvents.Models
     [Table("Events")]
     public class Event
     {
+        // FIX: Add a constructor to initialize the Bookings collection
+        public Event()
+        {
+            Bookings = new HashSet<Booking>();
+        }
+
         [Key]
         public int Id { get; set; }
 
         [Required]
         public string OrganizerId { get; set; }
 
-        // Navigation Property to Organizer
         [ForeignKey("OrganizerId")]
         public ApplicationUser Organizer { get; set; }
 
         [Required]
-        public int VenueId { get; set; }
+        [Display(Name = "Venue")]
+        public string VenueName { get; set; }
 
-        // Navigation Property to Venue
-        [ForeignKey("VenueId")]
-        public Venue Venue { get; set; }
+        [Required]
+        public string Location { get; set; }
 
         [Required]
         [MaxLength(250)]
@@ -56,12 +63,13 @@ namespace StarEvents.Models
         [Display(Name = "Image URL")]
         public string? ImageUrl { get; set; }
 
-        [NotMapped] // This attribute prevents EF Core from trying to save the file to the database
-        public IFormFile ImageFile { get; set; }
+        [NotMapped]
+        [Display(Name = "Event Image")]
+        public IFormFile? ImageFile { get; set; }
 
         [MaxLength(50)]
         [Display(Name = "Status")]
-        public string Status { get; set; } = "Draft"; // Draft, Active, Cancelled, Completed
+        public string Status { get; set; } = "Draft";
 
         [Display(Name = "Is Active")]
         public bool IsActive { get; set; } = true;
@@ -72,7 +80,7 @@ namespace StarEvents.Models
         [Display(Name = "Updated At")]
         public DateTime? UpdatedAt { get; set; }
 
-        // Navigation Property for Bookings
         public ICollection<Booking> Bookings { get; set; }
     }
 }
+

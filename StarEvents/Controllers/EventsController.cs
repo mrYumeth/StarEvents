@@ -19,17 +19,12 @@ namespace StarEvents.Controllers
             _context = context;
         }
 
-        // ----------------------------------------------------------------------
         // 1. Index - Display all active events with search/filter functionality
-        // ----------------------------------------------------------------------
-        // GET: /Events or /Events/Index
-        // Supports query parameters: category, location, dateFrom, keyword
         public async Task<IActionResult> Index(string? category, string? location, DateTime? dateFrom, string? keyword)
         {
             // Start with all active events
             var query = _context.Events
                 .Where(e => e.IsActive && e.Status == "Active")
-                .Include(e => e.Venue)
                 .AsQueryable();
 
             // Apply filters based on query parameters
@@ -40,19 +35,19 @@ namespace StarEvents.Controllers
                 query = query.Where(e => e.Category == category);
             }
 
-            // Filter by Location (City)
+            // FIX: Filter by the new 'Location' string property
             if (!string.IsNullOrEmpty(location))
             {
-                query = query.Where(e => e.Venue.City == location);
+                query = query.Where(e => e.Location.Contains(location));
             }
 
-            // Filter by Date (events on or after the specified date)
+            // Filter by Date
             if (dateFrom.HasValue)
             {
                 query = query.Where(e => e.StartDate.Date >= dateFrom.Value.Date);
             }
 
-            // Filter by Keyword (search in title or description)
+            // Filter by Keyword
             if (!string.IsNullOrEmpty(keyword))
             {
                 query = query.Where(e =>
@@ -69,13 +64,13 @@ namespace StarEvents.Controllers
                     Title = e.Title,
                     Category = e.Category,
                     DateRange = e.StartDate.ToString("MMM d, yyyy"),
-                    LocationName = e.Venue.City,
+                    // FIX: Use the new 'Location' property
+                    LocationName = e.Location,
                     PriceDisplay = $"LKR {e.TicketPrice:N2}",
                     ImageUrl = e.ImageUrl
                 })
                 .ToListAsync();
 
-            // Store current filter values in ViewBag for preserving filter state
             ViewBag.CurrentCategory = category;
             ViewBag.CurrentLocation = location;
             ViewBag.CurrentDateFrom = dateFrom?.ToString("yyyy-MM-dd");
@@ -84,14 +79,11 @@ namespace StarEvents.Controllers
             return View(events);
         }
 
-        // ----------------------------------------------------------------------
         // 2. Details - Display detailed information about a specific event
-        // ----------------------------------------------------------------------
-        // GET: /Events/Details/5
         public async Task<IActionResult> Details(int id)
         {
+            // FIX: Removed the invalid .Include(e => e.Venue)
             var eventEntity = await _context.Events
-                .Include(e => e.Venue)
                 .Include(e => e.Organizer)
                 .Where(e => e.Id == id)
                 .FirstOrDefaultAsync();
@@ -102,7 +94,6 @@ namespace StarEvents.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            // Check if event is still active
             if (!eventEntity.IsActive)
             {
                 TempData["ErrorMessage"] = "This event is no longer available.";
@@ -121,12 +112,13 @@ namespace StarEvents.Controllers
 
                 DateDisplay = eventEntity.StartDate.ToString("ddd, MMM d, yyyy h:mm tt") +
                               (eventEntity.EndDate.HasValue
-                                ? $" - {eventEntity.EndDate.Value.ToString("h:mm tt")}"
-                                : ""),
+                                  ? $" - {eventEntity.EndDate.Value.ToString("h:mm tt")}"
+                                  : ""),
 
-                VenueName = eventEntity.Venue.VenueName,
-                VenueAddress = $"{eventEntity.Venue.Address}, {eventEntity.Venue.City}",
-                VenueCity = eventEntity.Venue.City,
+                // FIX: Use the new string properties for Venue and Location
+                VenueName = eventEntity.VenueName,
+                VenueAddress = $"{eventEntity.VenueName}, {eventEntity.Location}",
+                VenueCity = eventEntity.Location,
 
                 OrganizerName = $"{eventEntity.Organizer.FirstName} {eventEntity.Organizer.LastName}",
 
@@ -137,32 +129,22 @@ namespace StarEvents.Controllers
             return View(viewModel);
         }
 
-        // ----------------------------------------------------------------------
-        // 3. Search (Legacy) - Kept for backward compatibility if needed
-        // ----------------------------------------------------------------------
-        // GET: /Events/Search
-        public async Task<IActionResult> Search()
+        // Legacy search methods - no changes needed here
+        public IActionResult Search()
         {
-            // Redirect to Index with no filters (shows all events)
             return RedirectToAction(nameof(Index));
         }
 
-        // ----------------------------------------------------------------------
-        // 4. Search (POST) - Handles legacy search form submissions
-        // ----------------------------------------------------------------------
-        // POST: /Events/Search
         [HttpPost]
-        public async Task<IActionResult> Search(SearchCriteriaModel criteria)
+        public IActionResult Search(SearchCriteriaModel criteria)
         {
-            // Redirect to Index with query parameters
             return RedirectToAction(nameof(Index), new
             {
                 category = criteria.Category,
                 location = criteria.Location,
                 dateFrom = criteria.Date,
-                keyword = "" // SearchCriteriaModel doesn't have keyword, but Index supports it
+                keyword = ""
             });
         }
     }
-
 }

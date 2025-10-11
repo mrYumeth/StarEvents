@@ -49,15 +49,14 @@ namespace StarEvents.Controllers
             // --- Data Fetching ---
             var allUserBookings = await _context.Bookings
                 .Where(b => b.CustomerId == user.Id)
-                .Include(b => b.Event)
-                    .ThenInclude(e => e.Venue)
+                .Include(b => b.Event) // Correctly include just the event
                 .OrderByDescending(b => b.BookingDate)
                 .ToListAsync();
 
             // --- THIS BLOCK WAS MOVED HERE (THE CORRECT PLACE) ---
             var featuredEvents = await _context.Events
                 .Where(e => e.IsActive && e.StartDate > DateTime.Now)
-                .Include(e => e.Venue)
+                // The invalid .Include(e => e.Venue) has been removed
                 .OrderBy(e => e.StartDate)
                 .Take(3)
                 .ToListAsync();

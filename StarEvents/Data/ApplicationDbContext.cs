@@ -30,11 +30,6 @@ namespace StarEvents.Data
                 .HasForeignKey(e => e.OrganizerId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            builder.Entity<Event>()
-                .HasOne(e => e.Venue)
-                .WithMany(v => v.Events)
-                .HasForeignKey(e => e.VenueId)
-                .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<Booking>()
                 .HasOne(b => b.Customer)
@@ -123,10 +118,41 @@ namespace StarEvents.Data
 
             if (!context.Events.Any())
             {
-                var venue = context.Venues.First();
+                // The venue is no longer fetched from a separate table.
+                // We now define it directly in the new Event objects.
                 context.Events.AddRange(
-                    new Event { OrganizerId = organizerUser.Id, VenueId = venue.Id, Title = "Star Events Grand Concert 2026", Description = "The biggest music event of the year.", Category = "Music", StartDate = DateTime.UtcNow.AddDays(90), Status = "Active", IsActive = true, TicketPrice = 5000.00m, AvailableTickets = 10000, ImageUrl = "/images/concert.jpg", CreatedAt = DateTime.UtcNow },
-                    new Event { OrganizerId = organizerUser.Id, VenueId = venue.Id, Title = "Comedy Night Live", Description = "An evening of laughter.", Category = "Comedy", StartDate = DateTime.UtcNow.AddDays(30), Status = "Active", IsActive = true, TicketPrice = 2500.00m, AvailableTickets = 3000, ImageUrl = "/images/comedy.jpg", CreatedAt = DateTime.UtcNow }
+                    new Event
+                    {
+                        OrganizerId = organizerUser.Id,
+                        VenueName = "Grand Arena", // Add a venue name
+                        Location = "Colombo, Sri Lanka", // Add a location
+                        Title = "Star Events Grand Concert 2026",
+                        Description = "The biggest music event of the year.",
+                        Category = "Music",
+                        StartDate = DateTime.UtcNow.AddDays(90),
+                        Status = "Active",
+                        IsActive = true,
+                        TicketPrice = 5000.00m,
+                        AvailableTickets = 10000,
+                        ImageUrl = "/images/concert.jpg",
+                        CreatedAt = DateTime.UtcNow
+                    },
+                    new Event
+                    {
+                        OrganizerId = organizerUser.Id,
+                        VenueName = "Laugh Factory", // Add a venue name
+                        Location = "Kandy, Sri Lanka", // Add a location
+                        Title = "Comedy Night Live",
+                        Description = "An evening of laughter.",
+                        Category = "Comedy",
+                        StartDate = DateTime.UtcNow.AddDays(30),
+                        Status = "Active",
+                        IsActive = true,
+                        TicketPrice = 2500.00m,
+                        AvailableTickets = 3000,
+                        ImageUrl = "/images/comedy.jpg",
+                        CreatedAt = DateTime.UtcNow
+                    }
                 );
                 await context.SaveChangesAsync();
             }

@@ -6,15 +6,17 @@
 <div class="container mt-5">
     <h2 class="mb-4">Create a New Event</h2>
 
-    <form asp-action="CreateEvent" method="post">
+    <!-- FIX 1: Added enctype="multipart/form-data" to enable file uploads -->
+    <form asp-action="CreateEvent" method="post" enctype="multipart/form-data">
         @Html.AntiForgeryToken()
-        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+        <!-- FIX 2: Changed validation summary to "All" to show all errors -->
+        <div asp-validation-summary="All" class="text-danger mb-3"></div>
 
         <!-- Title -->
         <div class="mb-3">
             <label asp-for="Title" class="form-label"></label>
             <input asp-for="Title" class="form-control" placeholder="Enter event title" />
-            <span asp-validation-for="Title" class="text-danger"></span>
         </div>
 
         <!-- Category -->
@@ -31,58 +33,54 @@
                 <option value="Workshop">Workshop</option>
                 <option value="Other">Other</option>
             </select>
-            <span asp-validation-for="Category" class="text-danger"></span>
         </div>
 
-        <!-- Venue Selection -->
+        <!-- Venue Name -->
         <div class="mb-3">
-            <label asp-for="VenueId" class="form-label">Venue</label>
-            <select asp-for="VenueId" class="form-select" asp-items="ViewBag.Venues">
-                <option value="">-- Select Venue --</option>
-            </select>
-            <span asp-validation-for="VenueId" class="text-danger"></span>
+            <label asp-for="VenueName" class="form-label">Venue</label>
+            <input asp-for="VenueName" class="form-control" placeholder="Enter the event venue" />
+        </div>
+
+        <!-- Location -->
+        <div class="mb-3">
+            <label asp-for="Location" class="form-label"></label>
+            <input asp-for="Location" class="form-control" placeholder="e.g., Colombo, Sri Lanka" />
         </div>
 
         <!-- Start Date -->
         <div class="mb-3">
             <label asp-for="StartDate" class="form-label"></label>
             <input asp-for="StartDate" type="datetime-local" class="form-control" />
-            <span asp-validation-for="StartDate" class="text-danger"></span>
         </div>
 
         <!-- End Date -->
         <div class="mb-3">
             <label asp-for="EndDate" class="form-label"></label>
             <input asp-for="EndDate" type="datetime-local" class="form-control" />
-            <span asp-validation-for="EndDate" class="text-danger"></span>
         </div>
 
         <!-- Ticket Price -->
         <div class="mb-3">
             <label asp-for="TicketPrice" class="form-label"></label>
             <input asp-for="TicketPrice" type="number" step="0.01" class="form-control" placeholder="0.00" />
-            <span asp-validation-for="TicketPrice" class="text-danger"></span>
         </div>
 
         <!-- Available Tickets -->
         <div class="mb-3">
             <label asp-for="AvailableTickets" class="form-label"></label>
             <input asp-for="AvailableTickets" type="number" class="form-control" placeholder="Enter number of tickets" />
-            <span asp-validation-for="AvailableTickets" class="text-danger"></span>
         </div>
 
-        <!-- Image URL -->
+        <!-- Image -->
         <div class="mb-3">
-            <label asp-for="ImageFile" class="form-label">Event Image</label>
+            <label asp-for="ImageFile" class="form-label"></label>
             <input asp-for="ImageFile" class="form-control" type="file" accept="image/*" />
-            <span asp-validation-for="ImageFile" class="text-danger"></span>
         </div>
 
         <!-- Description -->
         <div class="mb-3">
             <label asp-for="Description" class="form-label"></label>
             <textarea asp-for="Description" class="form-control" rows="4" placeholder="Describe your event"></textarea>
-            <span asp-validation-for="Description" class="text-danger"></span>
         </div>
 
         <!-- Status -->
@@ -92,7 +90,6 @@
                 <option value="Draft">Draft</option>
                 <option value="Active">Active</option>
             </select>
-            <span asp-validation-for="Status" class="text-danger"></span>
         </div>
 
         <!-- Is Active Checkbox -->
@@ -109,3 +106,4 @@
 @section Scripts {
     @await Html.PartialAsync("_ValidationScriptsPartial")
 }
+

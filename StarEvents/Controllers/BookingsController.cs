@@ -41,11 +41,10 @@ namespace StarEvents.Controllers
         // GET: /Bookings/Book/{id}
         public async Task<IActionResult> Book(int id)
         {
+            // FIX: Removed the invalid .Include(e => e.Venue)
             var eventEntity = await _context.Events
-                .Include(e => e.Venue)
                 .FirstOrDefaultAsync(e => e.Id == id && e.IsActive);
 
-            // FIX: Removed duplicate null check. This one is sufficient.
             if (eventEntity == null)
             {
                 TempData["ErrorMessage"] = "The event you're trying to book is not available.";
@@ -64,7 +63,8 @@ namespace StarEvents.Controllers
                 Title = eventEntity.Title,
                 Category = eventEntity.Category,
                 DateDisplay = eventEntity.StartDate.ToString("ddd, MMM d, yyyy"),
-                VenueCity = eventEntity.Venue.City,
+                // FIX: Changed from eventEntity.Venue.City to the new eventEntity.Location property
+                VenueCity = eventEntity.Location,
                 TicketPrice = $"LKR {eventEntity.TicketPrice:N2}",
                 AvailableTickets = eventEntity.AvailableTickets ?? 0
             };
@@ -83,9 +83,8 @@ namespace StarEvents.Controllers
                 return RedirectToAction(nameof(Book), new { id = eventId });
             }
 
-            // FIX: Added .Include(e => e.Venue) to ensure VenueName is loaded
+            // FIX: Removed the invalid .Include(e => e.Venue)
             var eventEntity = await _context.Events
-                .Include(e => e.Venue)
                 .FirstOrDefaultAsync(e => e.Id == eventId);
 
             if (eventEntity == null)
@@ -119,7 +118,8 @@ namespace StarEvents.Controllers
                 EventId = eventId,
                 EventName = eventEntity.Title,
                 EventDate = eventEntity.StartDate.ToString("ddd, MMM d, yyyy"),
-                VenueName = eventEntity.Venue?.VenueName ?? "TBC",
+                // FIX: Changed from eventEntity.Venue?.VenueName to the new eventEntity.VenueName property
+                VenueName = eventEntity.VenueName ?? "TBC",
                 TicketQuantity = quantity,
                 UnitPrice = unitPrice,
                 DiscountAmount = discountAmount,
@@ -140,8 +140,8 @@ namespace StarEvents.Controllers
                 var bookingData = JsonSerializer.Deserialize<BookingData>(bookingDataJson);
                 TempData.Keep("BookingData");
 
+                // FIX: Removed the invalid .Include(e => e.Venue)
                 var eventEntity = await _context.Events
-                    .Include(e => e.Venue)
                     .FirstOrDefaultAsync(e => e.Id == bookingData.EventId);
 
                 ViewBag.BookingData = bookingData;
@@ -227,8 +227,9 @@ namespace StarEvents.Controllers
         // GET: /Bookings/Confirmation/{id}
         public async Task<IActionResult> Confirmation(int bookingId)
         {
+            // FIX: Removed the invalid .ThenInclude(e => e.Venue)
             var booking = await _context.Bookings
-                .Include(b => b.Event).ThenInclude(e => e.Venue)
+                .Include(b => b.Event)
                 .Include(b => b.Payment)
                 .FirstOrDefaultAsync(b => b.Id == bookingId);
 
@@ -241,22 +242,24 @@ namespace StarEvents.Controllers
         public async Task<IActionResult> MyBookings()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            // FIX: Removed the invalid .ThenInclude(e => e.Venue)
             var userBookings = await _context.Bookings
                 .Where(b => b.CustomerId == userId)
-                .Include(b => b.Event).ThenInclude(e => e.Venue)
+                .Include(b => b.Event)
                 .OrderByDescending(b => b.BookingDate)
                 .ToListAsync();
 
             return View(userBookings);
         }
+
         // GET: /Bookings/ViewTicket/
         public async Task<IActionResult> ViewTicket(int id)
         {
+            // FIX: Removed the invalid .ThenInclude(e => e.Venue)
             var booking = await _context.Bookings
                 .Include(b => b.Event)
-                    .ThenInclude(e => e.Venue)
                 .Include(b => b.Payment)
-                .Include(b => b.Customer) // <-- FIX: Added this to load customer name for QR Code
+                .Include(b => b.Customer)
                 .FirstOrDefaultAsync(b => b.Id == id);
 
             if (booking == null)
@@ -292,28 +295,22 @@ namespace StarEvents.Controllers
                 return RedirectToAction("MyBookings");
             }
 
-            // Server-side validation
             if (booking.Status != "Confirmed" || booking.Event.StartDate <= DateTime.Now.AddHours(48))
             {
                 TempData["ErrorMessage"] = "This booking can no longer be cancelled.";
                 return RedirectToAction("MyBookings");
             }
 
-            // --- YOUR NEW LOGIC ---
-            // 1. Update the booking's status and save cancellation details
             booking.Status = "Cancelled";
             booking.CancellationReason = reason;
             booking.CancellationDate = DateTime.UtcNow;
 
-            // 2. Add the tickets back to the event
             booking.Event.AvailableTickets += booking.TicketQuantity;
 
-            // 3. Save changes
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] = $"Booking #{booking.Id} has been successfully cancelled.";
             return RedirectToAction("MyBookings");
         }
-
     }
 }
