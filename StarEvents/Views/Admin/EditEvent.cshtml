@@ -1,0 +1,169 @@
+@model StarEvents.ViewModels.AdminEventViewModel
+@{
+    ViewData["Title"] = "Edit Event";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="admin-form">
+            <h3><i class="fas fa-edit"></i> Edit Event</h3>
+            <hr>
+
+            <form asp-action="EditEvent" method="post" class="needs-validation" novalidate>
+                <input asp-for="Id" type="hidden" />
+                
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label asp-for="Title" class="form-label"></label>
+                            <input asp-for="Title" class="form-control" placeholder="Enter event title" required />
+                            <span asp-validation-for="Title" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Description" class="form-label"></label>
+                    <textarea asp-for="Description" class="form-control" rows="4" placeholder="Enter event description"></textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label asp-for="Category" class="form-label"></label>
+                            <select asp-for="Category" class="form-control">
+                                <option value="">Select Category</option>
+                                <option value="Music">Music</option>
+                                <option value="Theatre">Theatre</option>
+                                <option value="Sports">Sports</option>
+                                <option value="Cultural">Cultural</option>
+                                <option value="Conference">Conference</option>
+                                <option value="Festival">Festival</option>
+                                <option value="Other">Other</option>
+                            </select>
+                            <span asp-validation-for="Category" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label asp-for="Status" class="form-label"></label>
+                            <select asp-for="Status" class="form-control">
+                                <option value="Draft">Draft</option>
+                                <option value="Published">Published</option>
+                                <option value="Cancelled">Cancelled</option>
+                            </select>
+                            <span asp-validation-for="Status" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label asp-for="StartDate" class="form-label"></label>
+                            <input asp-for="StartDate" type="datetime-local" class="form-control" required />
+                            <span asp-validation-for="StartDate" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label asp-for="EndDate" class="form-label"></label>
+                            <input asp-for="EndDate" type="datetime-local" class="form-control" />
+                            <span asp-validation-for="EndDate" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label asp-for="VenueId" class="form-label"></label>
+                            <select asp-for="VenueId" class="form-control" asp-items="@(new SelectList(Model.Venues, "Id", "Name"))" required>
+                                <option value="">Select Venue</option>
+                            </select>
+                            <span asp-validation-for="VenueId" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label asp-for="OrganizerId" class="form-label"></label>
+                            <select asp-for="OrganizerId" class="form-control" asp-items="@(new SelectList(Model.Organizers, "Id", "Email"))" required>
+                                <option value="">Select Organizer</option>
+                            </select>
+                            <span asp-validation-for="OrganizerId" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group mt-4">
+                    <button type="submit" class="btn btn-admin btn-admin-primary">
+                        <i class="fas fa-save"></i> Update Event
+                    </button>
+                    <a asp-action="Events" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="admin-table">
+            <h5><i class="fas fa-info-circle"></i> Event Information</h5>
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <tbody>
+                        <tr>
+                            <td><strong>Event ID:</strong></td>
+                            <td>#@Model.Id</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Created:</strong></td>
+                            <td>@DateTime.Now.ToString("MMM dd, yyyy")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Status:</strong></td>
+                            <td><span class="status-badge status-@Model.Status.ToLower()">@Model.Status</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Category:</strong></td>
+                            <td>@(Model.Category ?? "Uncategorized")</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="admin-table mt-3">
+            <h5><i class="fas fa-exclamation-triangle"></i> Important Notes</h5>
+            <div class="alert alert-warning">
+                <ul class="mb-0">
+                    <li>Changing event details may affect existing bookings</li>
+                    <li>Notify attendees of significant changes</li>
+                    <li>Update status carefully to avoid confusion</li>
+                    <li>Venue changes require capacity verification</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-set end date when start date changes
+            const startDateInput = document.querySelector('input[name="StartDate"]');
+            const endDateInput = document.querySelector('input[name="EndDate"]');
+            
+            startDateInput.addEventListener('change', function() {
+                if (this.value && !endDateInput.value) {
+                    const startDate = new Date(this.value);
+                    startDate.setHours(startDate.getHours() + 2); // Add 2 hours as default
+                    endDateInput.value = startDate.toISOString().slice(0, 16);
+                }
+            });
+        });
+    </script>
+}

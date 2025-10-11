@@ -179,7 +179,7 @@ namespace StarEvents.Controllers
                     CustomerId = bookingData.CustomerId,
                     CardLastFour = cardLastFour
                 };
-                _context.Payments.Add(payment);
+                _context.CustomerPayments.Add(payment);
                 await _context.SaveChangesAsync();
 
                 var booking = new Booking

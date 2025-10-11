@@ -1,0 +1,94 @@
+@model IEnumerable<StarEvents.Models.Venue>
+@{
+    ViewData["Title"] = "Venue Management";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-map-marker-alt"></i> Venue Management</h2>
+    <a asp-action="CreateVenue" class="btn btn-admin btn-admin-primary">
+        <i class="fas fa-plus"></i> Add New Venue
+    </a>
+</div>
+
+<div class="admin-table">
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>
+                        <input type="checkbox" class="form-check-input" onchange="selectAll(this)" />
+                    </th>
+                    <th>Name</th>
+                    <th>Address</th>
+                    <th>City</th>
+                    <th>Capacity</th>
+                    <th>Events</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var venue in Model)
+                {
+                    <tr>
+                        <td>
+                            <input type="checkbox" class="form-check-input" />
+                        </td>
+                        <td>
+                            <strong>@venue.VenueName</strong>
+                        </td>
+                        <td>
+                            <i class="fas fa-map-marker-alt"></i> @venue.Address
+                        </td>
+                        <td>
+                            <span class="badge bg-info">@venue.City</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-primary">@venue.Capacity.ToString("N0")</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">@venue.EventCount events</span>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a asp-action="EditVenue" asp-route-id="@venue.Id" class="btn btn-outline-primary" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form asp-action="DeleteVenue" asp-route-id="@venue.Id" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-outline-danger" 
+                                            data-confirm-delete="true" 
+                                            data-confirm-message="Are you sure you want to delete this venue? This will affect all associated events." 
+                                            title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="text-center py-5">
+        <i class="fas fa-map-marker-alt fa-3x text-muted mb-3"></i>
+        <h4 class="text-muted">No venues found</h4>
+        <p class="text-muted">Add your first venue to start creating events.</p>
+        <a asp-action="CreateVenue" class="btn btn-admin btn-admin-primary">
+            <i class="fas fa-plus"></i> Add Venue
+        </a>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        function selectAll(checkbox) {
+            const table = checkbox.closest('table');
+            const checkboxes = table.querySelectorAll('tbody input[type="checkbox"]');
+            checkboxes.forEach(cb => cb.checked = checkbox.checked);
+        }
+    </script>
+}

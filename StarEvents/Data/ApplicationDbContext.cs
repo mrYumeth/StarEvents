@@ -10,66 +10,50 @@ using System.Threading.Tasks;
 
 namespace StarEvents.Data
 {
+    // 3) Application DbContext using IdentityDbContext
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
+        {
+        }
 
         public DbSet<Venue> Venues { get; set; }
         public DbSet<Event> Events { get; set; }
         public DbSet<Booking> Bookings { get; set; }
-        public DbSet<CustomerPayment> Payments { get; set; }
+        public DbSet<CustomerPayment> CustomerPayments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
 
-            // Configure relationships
-            builder.Entity<Event>()
-                .HasOne(e => e.Organizer)
-                .WithMany(u => u.OrganizedEvents)
-                .HasForeignKey(e => e.OrganizerId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            builder.Entity<Event>()
-                .HasOne(e => e.Venue)
-                .WithMany(v => v.Events)
-                .HasForeignKey(e => e.VenueId)
-                .OnDelete(DeleteBehavior.Restrict);
-
+            // Configure decimal precision for Booking properties
             builder.Entity<Booking>()
-                .HasOne(b => b.Customer)
-                .WithMany(u => u.Bookings)
-                .HasForeignKey(b => b.CustomerId)
-                .OnDelete(DeleteBehavior.Restrict);
-
+                .Property(b => b.UnitPrice)
+                .HasColumnType("decimal(18,2)");
+            
             builder.Entity<Booking>()
-                .HasOne(b => b.Event)
-                .WithMany(e => e.Bookings)
-                .HasForeignKey(b => b.EventId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .Property(b => b.DiscountAmount)
+                .HasColumnType("decimal(18,2)");
+            
+            builder.Entity<Booking>()
+                .Property(b => b.TotalAmount)
+                .HasColumnType("decimal(18,2)");
 
+            // Configure decimal precision for Event properties
+            builder.Entity<Event>()
+                .Property(e => e.TicketPrice)
+                .HasColumnType("decimal(18,2)");
+
+            // Configure decimal precision for CustomerPayment properties
             builder.Entity<CustomerPayment>()
-                .HasOne(p => p.Customer)
-                .WithMany(u => u.Payments)
-                .HasForeignKey(p => p.CustomerId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .Property(p => p.Amount)
+                .HasColumnType("decimal(18,2)");
 
-            // --- FIX: Corrected relationship from one-to-many to one-to-one ---
-            builder.Entity<Booking>()
-                .HasOne(b => b.Payment)
-                .WithOne() // A booking has one payment.
-                .HasForeignKey<Booking>(b => b.PaymentId)
-                .IsRequired(false) // PaymentId is nullable
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // Configure decimal precision
-            builder.Entity<Event>().Property(e => e.TicketPrice).HasColumnType("decimal(18,2)");
-            builder.Entity<Booking>().Property(b => b.UnitPrice).HasColumnType("decimal(18,2)");
-            builder.Entity<Booking>().Property(b => b.DiscountAmount).HasColumnType("decimal(18,2)");
-            builder.Entity<Booking>().Property(b => b.TotalAmount).HasColumnType("decimal(18,2)");
+            // Additional constraints/indices can be added here later.
         }
     }
 
+    // 4) Database initializer for seeding roles, users, and core data
     public static class DbInitializer
     {
         public static async Task SeedAsync(IServiceProvider serviceProvider)
@@ -79,6 +63,7 @@ namespace StarEvents.Data
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
+            // --- 4.1: Seed Roles and Admin User (Existing Logic) ---
             var roles = new[] { "Admin", "Organizer", "Customer" };
             foreach (var role in roles)
             {
@@ -88,79 +73,80 @@ namespace StarEvents.Data
                 }
             }
 
-            var adminUser = await userManager.FindByEmailAsync("admin@starevents.com");
+            // Create default admin
+            var adminEmail = "admin@starevents.com";
+            var adminPassword = "Admin@12345";
+            var adminUser = await userManager.FindByEmailAsync(adminEmail);
             if (adminUser == null)
             {
-                adminUser = new ApplicationUser { UserName = "admin@starevents.com", Email = "admin@starevents.com", FirstName = "System", LastName = "Admin", EmailConfirmed = true };
-                await userManager.CreateAsync(adminUser, "Admin@12345");
-                await userManager.AddToRoleAsync(adminUser, "Admin");
+                adminUser = new ApplicationUser
+                {
+                    UserName = adminEmail,
+                    Email = adminEmail,
+                    FirstName = "System",
+                    LastName = "Admin",
+                    LoyaltyPoints = 0,
+                    EmailConfirmed = true
+                };
+
+                var result = await userManager.CreateAsync(adminUser, adminPassword);
+                if (result.Succeeded)
+                {
+                    await userManager.AddToRoleAsync(adminUser, "Admin");
+                }
             }
 
-            var organizerUser = await userManager.FindByEmailAsync("organizer@starevents.com");
+            // --- 4.2: Seed Organizer and Event Data (Existing Logic) ---
+
+            // 1. Create a dedicated Organizer user
+            var organizerEmail = "organizer@starevents.com";
+            var organizerUser = await userManager.FindByEmailAsync(organizerEmail);
             if (organizerUser == null)
             {
-                organizerUser = new ApplicationUser { UserName = "organizer@starevents.com", Email = "organizer@starevents.com", FirstName = "Live", LastName = "Nation", EmailConfirmed = true };
+                organizerUser = new ApplicationUser
+                {
+                    UserName = organizerEmail,
+                    Email = organizerEmail,
+                    FirstName = "Live",
+                    LastName = "Nation",
+                    LoyaltyPoints = 0,
+                    EmailConfirmed = true
+                };
                 await userManager.CreateAsync(organizerUser, "Pass123!");
                 await userManager.AddToRoleAsync(organizerUser, "Organizer");
             }
 
-            var customerUser = await userManager.FindByEmailAsync("test@gmail.com");
-            if (customerUser == null)
-            {
-                customerUser = new ApplicationUser { UserName = "test@gmail.com", Email = "test@gmail.com", FirstName = "John", LastName = "Doe", LoyaltyPoints = 50, EmailConfirmed = true };
-                await userManager.CreateAsync(customerUser, "Test@123#");
-                await userManager.AddToRoleAsync(customerUser, "Customer");
-            }
-
+            // 2. Seed Venue Data
             if (!context.Venues.Any())
             {
-                context.Venues.AddRange(
-                    new Venue { VenueName = "Colombo Arena", Address = "123 Galle Road", City = "Colombo", Capacity = 15000, IsActive = true },
-                    new Venue { VenueName = "Kandy City Hall", Address = "456 Temple Street", City = "Kandy", Capacity = 5000, IsActive = true }
-                );
+                context.Venues.Add(new Venue
+                {
+                    VenueName = "Colombo Arena",
+                    Address = "123 Galle Road",
+                    City = "Colombo",
+                    Capacity = 15000
+                });
                 await context.SaveChangesAsync();
             }
 
-            if (!context.Events.Any())
+            // 3. Seed Event Data (Requires Venue and Organizer to exist)
+            if (organizerUser != null && context.Venues.Any() && !context.Events.Any())
             {
                 var venue = context.Venues.First();
-                context.Events.AddRange(
-                    new Event { OrganizerId = organizerUser.Id, VenueId = venue.Id, Title = "Star Events Grand Concert 2026", Description = "The biggest music event of the year.", Category = "Music", StartDate = DateTime.UtcNow.AddDays(90), Status = "Active", IsActive = true, TicketPrice = 5000.00m, AvailableTickets = 10000, ImageUrl = "/images/concert.jpg", CreatedAt = DateTime.UtcNow },
-                    new Event { OrganizerId = organizerUser.Id, VenueId = venue.Id, Title = "Comedy Night Live", Description = "An evening of laughter.", Category = "Comedy", StartDate = DateTime.UtcNow.AddDays(30), Status = "Active", IsActive = true, TicketPrice = 2500.00m, AvailableTickets = 3000, ImageUrl = "/images/comedy.jpg", CreatedAt = DateTime.UtcNow }
-                );
-                await context.SaveChangesAsync();
-            }
 
-            if (!context.Bookings.Any())
-            {
-                var firstEvent = context.Events.First();
-                var totalAmount = firstEvent.TicketPrice * 2;
-
-                var samplePayment = new CustomerPayment
+                context.Events.Add(new Event
                 {
-                    Amount = totalAmount,
-                    PaymentMethod = "CreditCard",
-                    TransactionId = "TXN-DEMO123",
-                    Status = "Confirmed",
-                    PaymentDate = DateTime.UtcNow.AddDays(-5),
-                    CustomerId = customerUser.Id,
-                    CardLastFour = "1234"
-                };
-                context.Payments.Add(samplePayment);
-                await context.SaveChangesAsync();
-
-                context.Bookings.Add(new Booking
-                {
-                    CustomerId = customerUser.Id,
-                    EventId = firstEvent.Id,
-                    TicketQuantity = 2,
-                    UnitPrice = firstEvent.TicketPrice,
-                    DiscountAmount = 0,
-                    TotalAmount = totalAmount,
-                    Status = "Confirmed",
-                    PaymentId = samplePayment.Id,
-                    BookingDate = DateTime.UtcNow.AddDays(-5),
-                    PointsEarned = 100,
+                    OrganizerId = organizerUser.Id, // FK is now a string!
+                    VenueId = venue.Id,
+                    Title = "Star Events Grand Concert 2026",
+                    Description = "The biggest music event of the year, featuring international stars and local talent.",
+                    Category = "Music",
+                    StartDate = DateTime.UtcNow.AddDays(90).Date.AddHours(19),
+                    EndDate = DateTime.UtcNow.AddDays(90).Date.AddHours(22),
+                    TicketPrice = 150.00m,
+                    AvailableTickets = 1000,
+                    Status = "Published",
+                    CreatedAt = DateTime.UtcNow
                 });
                 await context.SaveChangesAsync();
             }

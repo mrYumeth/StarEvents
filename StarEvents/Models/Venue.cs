@@ -41,5 +41,9 @@ namespace StarEvents.Models
 
         // Navigation property
         public ICollection<Event> Events { get; set; }
+
+        // Helper property for view display
+        [NotMapped]
+        public int EventCount { get; set; }
     }
 }

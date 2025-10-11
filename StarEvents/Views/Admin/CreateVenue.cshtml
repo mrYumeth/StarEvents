@@ -1,0 +1,128 @@
+@model StarEvents.Models.Venue
+@{
+    ViewData["Title"] = "Create Venue";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="admin-form">
+            <h3><i class="fas fa-plus-circle"></i> Add New Venue</h3>
+            <hr>
+
+            <form asp-action="CreateVenue" method="post" class="needs-validation" novalidate>
+                <div class="form-group">
+                    <label asp-for="VenueName" class="form-label"></label>
+                    <input asp-for="VenueName" class="form-control" placeholder="Enter venue name" required />
+                    <span asp-validation-for="VenueName" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Address" class="form-label"></label>
+                    <textarea asp-for="Address" class="form-control" rows="3" placeholder="Enter complete address" required></textarea>
+                    <span asp-validation-for="Address" class="text-danger"></span>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label asp-for="City" class="form-label"></label>
+                            <input asp-for="City" class="form-control" placeholder="Enter city name" required />
+                            <span asp-validation-for="City" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label asp-for="Capacity" class="form-label"></label>
+                            <input asp-for="Capacity" type="number" class="form-control" placeholder="Enter capacity" min="1" required />
+                            <span asp-validation-for="Capacity" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group mt-4">
+                    <button type="submit" class="btn btn-admin btn-admin-primary">
+                        <i class="fas fa-save"></i> Create Venue
+                    </button>
+                    <a asp-action="Venues" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="admin-table">
+            <h5><i class="fas fa-info-circle"></i> Venue Creation Tips</h5>
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <tbody>
+                        <tr>
+                            <td><i class="fas fa-building text-primary"></i></td>
+                            <td>Use a clear, descriptive name for the venue</td>
+                        </tr>
+                        <tr>
+                            <td><i class="fas fa-map-marker-alt text-success"></i></td>
+                            <td>Include complete address with landmarks</td>
+                        </tr>
+                        <tr>
+                            <td><i class="fas fa-users text-info"></i></td>
+                            <td>Set accurate capacity for event planning</td>
+                        </tr>
+                        <tr>
+                            <td><i class="fas fa-city text-warning"></i></td>
+                            <td>Specify the city for location filtering</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="admin-table mt-3">
+            <h5><i class="fas fa-chart-bar"></i> Venue Statistics</h5>
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <tbody>
+                        <tr>
+                            <td>Total Venues:</td>
+                            <td><span class="badge bg-primary">@ViewBag.TotalVenues</span></td>
+                        </tr>
+                        <tr>
+                            <td>Total Capacity:</td>
+                            <td><span class="badge bg-success">@ViewBag.TotalCapacity</span></td>
+                        </tr>
+                        <tr>
+                            <td>Average Capacity:</td>
+                            <td><span class="badge bg-info">@ViewBag.AverageCapacity</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="admin-table mt-3">
+            <h5><i class="fas fa-exclamation-triangle"></i> Important Notes</h5>
+            <div class="alert alert-warning">
+                <ul class="mb-0">
+                    <li>Venue capacity affects event planning</li>
+                    <li>Accurate address helps attendees navigate</li>
+                    <li>City information enables location-based searches</li>
+                    <li>Consider accessibility and parking availability</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Format capacity input
+            const capacityInput = document.querySelector('input[name="Capacity"]');
+            capacityInput.addEventListener('input', function() {
+                this.value = this.value.replace(/[^0-9]/g, '');
+            });
+        });
+    </script>
+}

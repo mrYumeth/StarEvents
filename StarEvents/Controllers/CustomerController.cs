@@ -7,11 +7,12 @@ using StarEvents.Models;
 using StarEvents.ViewModels;
 using System;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace StarEvents.Controllers
 {
-    [Authorize(Roles = "Customer")] // Ensure only logged-in customers can access
+    [Authorize(Roles = "Customer")]
     public class CustomerController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -23,38 +24,22 @@ namespace StarEvents.Controllers
             _userManager = userManager;
         }
 
-        // ----------------------------------------------------------------------
-        // 0. Index - Redirects to the main Dashboard page.
-        // ----------------------------------------------------------------------
-        // GET: /Customer/Index (or just /Customer)
         public IActionResult Index()
         {
-            // Redirect to the new Dashboard action
             return RedirectToAction(nameof(Dashboard));
         }
-
-        // ----------------------------------------------------------------------
-        // 1. Dashboard - The main customer landing page after login.
-        // ----------------------------------------------------------------------
-        // GET: /Customer/Dashboard
 
         public async Task<IActionResult> Dashboard()
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-            {
-                return Challenge(); // Not found or not logged in
-            }
+            if (user == null) { return Challenge(); }
 
-            // --- Data Fetching ---
             var allUserBookings = await _context.Bookings
                 .Where(b => b.CustomerId == user.Id)
-                .Include(b => b.Event)
-                    .ThenInclude(e => e.Venue)
+                .Include(b => b.Event).ThenInclude(e => e.Venue)
                 .OrderByDescending(b => b.BookingDate)
                 .ToListAsync();
 
-            // --- THIS BLOCK WAS MOVED HERE (THE CORRECT PLACE) ---
             var featuredEvents = await _context.Events
                 .Where(e => e.IsActive && e.StartDate > DateTime.Now)
                 .Include(e => e.Venue)
@@ -62,10 +47,8 @@ namespace StarEvents.Controllers
                 .Take(3)
                 .ToListAsync();
 
-            // --- Logic ---
             var confirmedBookings = allUserBookings.Where(b => b.Status == "Confirmed" || b.Status == "Completed").ToList();
 
-            // --- Populate the ViewModel ---
             var dashboardViewModel = new CustomerDashboardViewModel
             {
                 UserName = user.FirstName,
@@ -74,18 +57,14 @@ namespace StarEvents.Controllers
                 TotalSpent = confirmedBookings.Sum(b => b.TotalAmount),
                 LoyaltyPoints = user.LoyaltyPoints,
                 RecentBookings = allUserBookings.Where(b => b.Status == "Confirmed").Take(5).ToList(),
-
-                // --- THIS IS THE CORRECT ASSIGNMENT ---
                 FeaturedEvents = featuredEvents
-            }; // <-- The closing brace was also missing
+            };
 
             return View(dashboardViewModel);
         }
 
-        // ----------------------------------------------------------------------
-        // 2. Profile - Placeholder for viewing/editing customer profile.
-        // ----------------------------------------------------------------------
-        // GET: /Customer/Profile
+        // --- UPDATED Profile GET Action ---
+        [HttpGet]
         public async Task<IActionResult> Profile()
         {
             var user = await _userManager.GetUserAsync(User);
@@ -94,14 +73,20 @@ namespace StarEvents.Controllers
                 return RedirectToPage("/Account/Login", new { area = "Identity" });
             }
 
-            // Profile viewing/editing logic will go here.
+            // Calculate stats for the profile sidebar
+            var confirmedBookings = await _context.Bookings
+                .Where(b => b.CustomerId == user.Id && (b.Status == "Confirmed" || b.Status == "Completed"))
+                .Include(b => b.Event)
+                .ToListAsync();
+
+            ViewBag.TotalBookings = confirmedBookings.Count;
+            ViewBag.UpcomingEvents = confirmedBookings.Count(b => b.Event.StartDate > DateTime.Now);
+            ViewBag.TotalSpent = confirmedBookings.Sum(b => b.TotalAmount).ToString("N2");
+
             return View(user);
         }
 
-        // ----------------------------------------------------------------------
-        // 3. Update Profile - Handle profile updates
-        // ----------------------------------------------------------------------
-        // POST: /Customer/Profile
+        // POST: /Customer/Profile (This action is correct as you wrote it)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Profile(ApplicationUser model)
@@ -117,11 +102,9 @@ namespace StarEvents.Controllers
                 return RedirectToPage("/Account/Login", new { area = "Identity" });
             }
 
-            // Update only allowed fields
             user.FirstName = model.FirstName;
             user.LastName = model.LastName;
             user.PhoneNumber = model.PhoneNumber;
-            // Add other fields as needed
 
             var result = await _userManager.UpdateAsync(user);
 
@@ -137,6 +120,38 @@ namespace StarEvents.Controllers
             }
 
             return View(model);
+        }
+
+        // --- NEW ChangePassword POST Action ---
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePassword(string currentPassword, string newPassword, string confirmPassword)
+        {
+            if (newPassword != confirmPassword)
+            {
+                TempData["ErrorMessage"] = "New password and confirmation password do not match.";
+                return RedirectToAction(nameof(Profile));
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return RedirectToPage("/Account/Login", new { area = "Identity" });
+            }
+
+            var changePasswordResult = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+
+            if (changePasswordResult.Succeeded)
+            {
+                TempData["SuccessMessage"] = "Your password has been changed successfully.";
+            }
+            else
+            {
+                var errorDescription = string.Join(", ", changePasswordResult.Errors.Select(e => e.Description));
+                TempData["ErrorMessage"] = $"Error changing password: {errorDescription}";
+            }
+
+            return RedirectToAction(nameof(Profile));
         }
     }
 }

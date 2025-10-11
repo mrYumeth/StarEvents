@@ -1,0 +1,108 @@
+@model StarEvents.Models.Venue
+@{
+    ViewData["Title"] = "Edit Venue";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="admin-form">
+            <h3><i class="fas fa-edit"></i> Edit Venue</h3>
+            <hr>
+
+            <form asp-action="EditVenue" method="post" class="needs-validation" novalidate>
+                <input asp-for="Id" type="hidden" />
+                
+                <div class="form-group">
+                    <label asp-for="VenueName" class="form-label"></label>
+                    <input asp-for="VenueName" class="form-control" placeholder="Enter venue name" required />
+                    <span asp-validation-for="VenueName" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Address" class="form-label"></label>
+                    <textarea asp-for="Address" class="form-control" rows="3" placeholder="Enter complete address" required></textarea>
+                    <span asp-validation-for="Address" class="text-danger"></span>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label asp-for="City" class="form-label"></label>
+                            <input asp-for="City" class="form-control" placeholder="Enter city name" required />
+                            <span asp-validation-for="City" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label asp-for="Capacity" class="form-label"></label>
+                            <input asp-for="Capacity" type="number" class="form-control" placeholder="Enter capacity" min="1" required />
+                            <span asp-validation-for="Capacity" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group mt-4">
+                    <button type="submit" class="btn btn-admin btn-admin-primary">
+                        <i class="fas fa-save"></i> Update Venue
+                    </button>
+                    <a asp-action="Venues" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="admin-table">
+            <h5><i class="fas fa-info-circle"></i> Venue Information</h5>
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <tbody>
+                        <tr>
+                            <td><strong>Venue ID:</strong></td>
+                            <td>#@Model.Id</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Current Name:</strong></td>
+                            <td>@Model.VenueName</td>
+                        </tr>
+                        <tr>
+                            <td><strong>City:</strong></td>
+                            <td>@Model.City</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Capacity:</strong></td>
+                            <td><span class="badge bg-primary">@Model.Capacity.ToString("N0")</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="admin-table mt-3">
+            <h5><i class="fas fa-exclamation-triangle"></i> Important Notes</h5>
+            <div class="alert alert-warning">
+                <ul class="mb-0">
+                    <li>Capacity changes affect all future events</li>
+                    <li>Address changes may confuse attendees</li>
+                    <li>Notify event organizers of venue updates</li>
+                    <li>Verify capacity with venue management</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Format capacity input
+            const capacityInput = document.querySelector('input[name="Capacity"]');
+            capacityInput.addEventListener('input', function() {
+                this.value = this.value.replace(/[^0-9]/g, '');
+            });
+        });
+    </script>
+}

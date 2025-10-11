@@ -27,7 +27,7 @@ namespace StarEvents.Controllers
                     // If they are signed in, check their role and redirect to the correct dashboard
                     if (await _userManager.IsInRoleAsync(user, "Admin"))
                     {
-                        return RedirectToAction("Dashboard", "Admin"); // Assuming Admin dashboard is at /Admin/Dashboard
+                        return RedirectToAction("Index", "Admin"); // Assuming Admin dashboard is at /Admin/Dashboard
                     }
                     if (await _userManager.IsInRoleAsync(user, "Organizer"))
                     {

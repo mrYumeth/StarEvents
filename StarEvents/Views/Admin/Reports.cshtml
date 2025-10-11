@@ -1,0 +1,274 @@
+@model StarEvents.ViewModels.AdminReportsViewModel
+@{
+    ViewData["Title"] = "Reports & Analytics";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-chart-bar"></i> Reports & Analytics</h2>
+    <div class="btn-group">
+        <button class="btn btn-outline-primary" onclick="exportData('csv', 'events')">
+            <i class="fas fa-download"></i> Export Events
+        </button>
+        <button class="btn btn-outline-primary" onclick="exportData('csv', 'bookings')">
+            <i class="fas fa-download"></i> Export Bookings
+        </button>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="dashboard-cards">
+    <div class="dashboard-card users">
+        <div class="card-icon">
+            <i class="fas fa-dollar-sign"></i>
+        </div>
+        <div class="card-title">Total Revenue</div>
+        <div class="card-value">LKR @Model.TotalRevenue.ToString("N0")</div>
+        <div class="card-change">
+            <i class="fas fa-arrow-up"></i> +15% from last month
+        </div>
+    </div>
+
+    <div class="dashboard-card events">
+        <div class="card-icon">
+            <i class="fas fa-ticket-alt"></i>
+        </div>
+        <div class="card-title">Tickets Sold</div>
+        <div class="card-value">@Model.TotalTicketsSold.ToString("N0")</div>
+        <div class="card-change">
+            <i class="fas fa-arrow-up"></i> +22% from last month
+        </div>
+    </div>
+
+    <div class="dashboard-card venues">
+        <div class="card-icon">
+            <i class="fas fa-calendar-check"></i>
+        </div>
+        <div class="card-title">Active Events</div>
+        <div class="card-value">@Model.EventsByCategory.Sum(e => e.Count)</div>
+        <div class="card-change">
+            <i class="fas fa-arrow-up"></i> +8% from last month
+        </div>
+    </div>
+
+    <div class="dashboard-card bookings">
+        <div class="card-icon">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="card-title">Avg. Ticket Price</div>
+        <div class="card-value">LKR @(Model.TotalTicketsSold > 0 ? (Model.TotalRevenue / Model.TotalTicketsSold).ToString("N0") : "0")</div>
+        <div class="card-change">
+            <i class="fas fa-arrow-up"></i> +5% from last month
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="charts-container">
+    <div class="chart-card">
+        <h5 class="chart-title">Monthly Revenue Trend</h5>
+        <canvas id="revenueChart" width="400" height="200" 
+                data-chart-data='@Html.Raw(Json.Serialize(Model.RevenueByMonth))'></canvas>
+    </div>
+
+    <div class="chart-card">
+        <h5 class="chart-title">Events by Category</h5>
+        <canvas id="categoryChart" width="400" height="200" 
+                data-chart-data='@Html.Raw(Json.Serialize(Model.EventsByCategory))'></canvas>
+    </div>
+</div>
+
+<!-- Top Events Table -->
+<div class="admin-table">
+    <h5><i class="fas fa-trophy"></i> Top Performing Events</h5>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Event Title</th>
+                    <th>Tickets Sold</th>
+                    <th>Revenue</th>
+                    <th>Performance</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (int i = 0; i < Model.TopEvents.Count; i++)
+                {
+                    var eventStats = Model.TopEvents[i];
+                    var rank = i + 1;
+                    var performance = Model.TopEvents.Max()?.Revenue > 0 ? (eventStats.Revenue / Model.TopEvents.Max().Revenue * 100) : 0;
+                    
+                    <tr>
+                        <td>
+                            @if (rank == 1)
+                            {
+                                <span class="badge bg-warning"><i class="fas fa-crown"></i> #@rank</span>
+                            }
+                            else if (rank == 2)
+                            {
+                                <span class="badge bg-secondary"><i class="fas fa-medal"></i> #@rank</span>
+                            }
+                            else if (rank == 3)
+                            {
+                                <span class="badge bg-warning text-dark"><i class="fas fa-award"></i> #@rank</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-primary">#@rank</span>
+                            }
+                        </td>
+                        <td>
+                            <strong>@eventStats.EventTitle</strong>
+                        </td>
+                        <td>
+                            <span class="badge bg-info">@eventStats.TicketsSold.ToString("N0")</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-success">LKR @eventStats.Revenue.ToString("N0")</span>
+                        </td>
+                        <td>
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar bg-primary" role="progressbar" 
+                                     style="width: @performance.ToString("F1")%" 
+                                     aria-valuenow="@performance" aria-valuemin="0" aria-valuemax="100">
+                                    @performance.ToString("F1")%
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Category Breakdown -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="admin-table">
+            <h5><i class="fas fa-chart-pie"></i> Events by Category</h5>
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Count</th>
+                            <th>Percentage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            var totalEvents = Model.EventsByCategory.Sum(e => e.Count);
+                        }
+                        @foreach (var category in Model.EventsByCategory)
+                        {
+                            var percentage = totalEvents > 0 ? (category.Count * 100.0 / totalEvents) : 0;
+                            <tr>
+                                <td>
+                                    <span class="badge bg-secondary">@category.Category</span>
+                                </td>
+                                <td>@category.Count</td>
+                                <td>
+                                    <div class="progress" style="height: 15px;">
+                                        <div class="progress-bar bg-info" role="progressbar" 
+                                             style="width: @percentage.ToString("F1")%" 
+                                             aria-valuenow="@percentage" aria-valuemin="0" aria-valuemax="100">
+                                            @percentage.ToString("F1")%
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="admin-table">
+            <h5><i class="fas fa-calendar-alt"></i> Monthly Performance</h5>
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Month</th>
+                            <th>Revenue</th>
+                            <th>Tickets</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var month in Model.RevenueByMonth.TakeLast(6))
+                        {
+                            <tr>
+                                <td>
+                                    <span class="badge bg-primary">@month.MonthName</span>
+                                </td>
+                                <td>
+                                    <span class="text-success">LKR @month.Revenue.ToString("N0")</span>
+                                </td>
+                                <td>
+                                    <span class="text-info">@month.TicketsSold.ToString("N0")</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Export Options -->
+<div class="admin-table mt-4">
+    <h5><i class="fas fa-download"></i> Export Reports</h5>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-2x text-primary mb-3"></i>
+                    <h6>User Report</h6>
+                    <p class="text-muted">Export all user data including roles and activity</p>
+                    <button class="btn btn-outline-primary" onclick="exportData('csv', 'users')">
+                        <i class="fas fa-download"></i> Export Users
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-calendar-alt fa-2x text-success mb-3"></i>
+                    <h6>Events Report</h6>
+                    <p class="text-muted">Export all events with details and statistics</p>
+                    <button class="btn btn-outline-primary" onclick="exportData('csv', 'events')">
+                        <i class="fas fa-download"></i> Export Events
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-ticket-alt fa-2x text-warning mb-3"></i>
+                    <h6>Bookings Report</h6>
+                    <p class="text-muted">Export all booking data and payment information</p>
+                    <button class="btn btn-outline-primary" onclick="exportData('csv', 'bookings')">
+                        <i class="fas fa-download"></i> Export Bookings
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize charts when page loads
+            initializeCharts();
+        });
+    </script>
+}

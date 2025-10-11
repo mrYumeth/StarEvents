@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using StarEvents.Data;
+using Microsoft.AspNetCore.Http;
 
 namespace StarEvents.Models
 {

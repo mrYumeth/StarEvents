@@ -474,9 +474,6 @@
                                     <a href="@Url.Action("ViewTicket", "Bookings", new { id = booking.Id })" class="btn-action btn-view">
                                         🎫 View E-Ticket
                                     </a>
-                                    <a href="@Url.Action("Details", "Events", new { id = booking.EventId })" class="btn-action btn-secondary">
-                                        ℹ️ Event Details
-                                    </a>
                                     @if (booking.Status == "Confirmed" && booking.Event.StartDate > DateTime.Now.AddHours(48))
                                     {
                                         <button type="button" class="btn-action btn-cancel" onclick="showCancelModal(@booking.Id)">

@@ -1,0 +1,224 @@
+@model IEnumerable<StarEvents.ViewModels.AdminUserViewModel>
+@{
+    ViewData["Title"] = "User Management";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-users"></i> User Management</h2>
+    <div>
+        <button class="btn btn-outline-primary" onclick="exportData('csv', 'users')">
+            <i class="fas fa-download"></i> Export Users
+        </button>
+    </div>
+</div>
+
+<div class="admin-table">
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>
+                        <input type="checkbox" class="form-check-input" onchange="selectAll(this)" />
+                    </th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Loyalty Points</th>
+                    <th>Email Verified</th>
+                    <th>Roles</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Model)
+                {
+                    <tr>
+                        <td>
+                            <input type="checkbox" class="form-check-input" />
+                        </td>
+                        <td>
+                            <strong>@user.FullName</strong>
+                            <br><small class="text-muted">ID: @user.Id.Substring(0, 8)...</small>
+                        </td>
+                        <td>
+                            <i class="fas fa-envelope"></i> @user.Email
+                        </td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(user.PhoneNumber))
+                            {
+                                <i class="fas fa-phone"></i> @user.PhoneNumber
+                            }
+                            else
+                            {
+                                <span class="text-muted">Not provided</span>
+                            }
+                        </td>
+                        <td>
+                            <span class="badge bg-warning">@user.LoyaltyPoints points</span>
+                        </td>
+                        <td>
+                            @if (user.EmailConfirmed)
+                            {
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check"></i> Verified
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-times"></i> Unverified
+                                </span>
+                            }
+                        </td>
+                        <td>
+                            @foreach (var role in user.Roles)
+                            {
+                                <span class="badge bg-primary me-1">@role</span>
+                            }
+                            @if (!user.Roles.Any())
+                            {
+                                <span class="badge bg-secondary">No Role</span>
+                            }
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="#" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+                                    <i class="fas fa-cog"></i> Manage
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <form asp-action="ToggleUserRole" method="post" class="d-inline w-100">
+                                            <input type="hidden" name="userId" value="@user.Id" />
+                                            <input type="hidden" name="role" value="Admin" />
+                                            <button type="submit" class="dropdown-item btn btn-link text-start w-100">
+                                                @if (user.Roles.Contains("Admin"))
+                                                {
+                                                    <i class="fas fa-user-minus"></i> @Html.Raw("Remove Admin")
+                                                }
+                                                else
+                                                {
+                                                    <i class="fas fa-user-plus"></i> @Html.Raw("Make Admin")
+                                                }
+                                            </button>
+                                        </form>
+                                    </li>
+                                    <li>
+                                        <form asp-action="ToggleUserRole" method="post" class="d-inline w-100">
+                                            <input type="hidden" name="userId" value="@user.Id" />
+                                            <input type="hidden" name="role" value="Organizer" />
+                                            <button type="submit" class="dropdown-item btn btn-link text-start w-100">
+                                                @if (user.Roles.Contains("Organizer"))
+                                                {
+                                                    <i class="fas fa-user-minus"></i> @Html.Raw("Remove Organizer")
+                                                }
+                                                else
+                                                {
+                                                    <i class="fas fa-user-plus"></i> @Html.Raw("Make Organizer")
+                                                }
+                                            </button>
+                                        </form>
+                                    </li>
+                                    <li>
+                                        <form asp-action="ToggleUserRole" method="post" class="d-inline w-100">
+                                            <input type="hidden" name="userId" value="@user.Id" />
+                                            <input type="hidden" name="role" value="Customer" />
+                                            <button type="submit" class="dropdown-item btn btn-link text-start w-100">
+                                                @if (user.Roles.Contains("Customer"))
+                                                {
+                                                    <i class="fas fa-user-minus"></i> @Html.Raw("Remove Customer")
+                                                }
+                                                else
+                                                {
+                                                    <i class="fas fa-user-plus"></i> @Html.Raw("Make Customer")
+                                                }
+                                            </button>
+                                        </form>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form asp-action="DeleteUser" method="post" class="d-inline w-100">
+                                            <input type="hidden" name="userId" value="@user.Id" />
+                                            <button type="submit" class="dropdown-item btn btn-link text-danger text-start w-100" 
+                                                    data-confirm-delete="true" 
+                                                    data-confirm-message="Are you sure you want to delete this user? This action cannot be undone.">
+                                                <i class="fas fa-trash"></i> @Html.Raw("Delete User")
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="text-center py-5">
+        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+        <h4 class="text-muted">No users found</h4>
+        <p class="text-muted">Users will appear here once they register.</p>
+    </div>
+}
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="admin-table">
+            <h5><i class="fas fa-chart-pie"></i> User Statistics</h5>
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <tbody>
+                        <tr>
+                            <td>Total Users:</td>
+                            <td><span class="badge bg-primary">@Model.Count()</span></td>
+                        </tr>
+                        <tr>
+                            <td>Admins:</td>
+                            <td><span class="badge bg-danger">@Model.Count(u => u.Roles.Contains("Admin"))</span></td>
+                        </tr>
+                        <tr>
+                            <td>Organizers:</td>
+                            <td><span class="badge bg-warning">@Model.Count(u => u.Roles.Contains("Organizer"))</span></td>
+                        </tr>
+                        <tr>
+                            <td>Customers:</td>
+                            <td><span class="badge bg-success">@Model.Count(u => u.Roles.Contains("Customer"))</span></td>
+                        </tr>
+                        <tr>
+                            <td>Verified Users:</td>
+                            <td><span class="badge bg-info">@Model.Count(u => u.EmailConfirmed)</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="admin-table">
+            <h5><i class="fas fa-info-circle"></i> User Management Tips</h5>
+            <div class="alert alert-info">
+                <ul class="mb-0">
+                    <li>Admins have full system access</li>
+                    <li>Organizers can create and manage events</li>
+                    <li>Customers can book tickets and view events</li>
+                    <li>Users can have multiple roles</li>
+                    <li>Email verification affects account security</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function selectAll(checkbox) {
+            const table = checkbox.closest('table');
+            const checkboxes = table.querySelectorAll('tbody input[type="checkbox"]');
+            checkboxes.forEach(cb => cb.checked = checkbox.checked);
+        }
+    </script>
+}
