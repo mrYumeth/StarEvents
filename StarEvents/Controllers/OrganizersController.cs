@@ -1,11 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Hosting; // FIX: Added this using statement
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StarEvents.Data;
 using StarEvents.Models;
 using System;
-using System.IO; // FIX: Added this using statement
+using System.IO;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -24,7 +24,6 @@ namespace StarEvents.Controllers
             _webHostEnvironment = webHostEnvironment;
         }
 
-        // Dashboard / Index
         public async Task<IActionResult> Index()
         {
             var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -46,20 +45,19 @@ namespace StarEvents.Controllers
             return View();
         }
 
-        // CREATE EVENT (GET)
         [HttpGet]
         public IActionResult CreateEvent()
         {
             return View();
         }
 
-        // CREATE EVENT (POST)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateEvent(Event model)
         {
             ModelState.Remove("OrganizerId");
             ModelState.Remove("Organizer");
+            ModelState.Remove("Bookings");
 
             if (ModelState.IsValid)
             {
@@ -80,7 +78,6 @@ namespace StarEvents.Controllers
                 var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 model.OrganizerId = currentUserId;
                 model.CreatedAt = DateTime.UtcNow;
-                model.UpdatedAt = DateTime.UtcNow;
 
                 if (string.IsNullOrEmpty(model.Status))
                 {
@@ -93,11 +90,9 @@ namespace StarEvents.Controllers
                 TempData["SuccessMessage"] = "Event created successfully!";
                 return RedirectToAction(nameof(MyEvents));
             }
-
             return View(model);
         }
 
-        // MY EVENTS PAGE
         public async Task<IActionResult> MyEvents()
         {
             var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -108,7 +103,6 @@ namespace StarEvents.Controllers
             return View(events);
         }
 
-        // EDIT EVENT (GET)
         [HttpGet]
         public async Task<IActionResult> EditEvent(int id)
         {
@@ -122,7 +116,6 @@ namespace StarEvents.Controllers
             return View(eventToEdit);
         }
 
-        // EDIT EVENT (POST)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditEvent(int id, Event model)
@@ -134,11 +127,12 @@ namespace StarEvents.Controllers
 
             ModelState.Remove("OrganizerId");
             ModelState.Remove("Organizer");
+            ModelState.Remove("Bookings");
 
             if (ModelState.IsValid)
             {
                 var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                var existingEvent = await _context.Events
+                var existingEvent = await _context.Events.AsNoTracking()
                     .FirstOrDefaultAsync(e => e.Id == id && e.OrganizerId == userIdString);
 
                 if (existingEvent == null)
@@ -146,32 +140,56 @@ namespace StarEvents.Controllers
                     return NotFound();
                 }
 
-                existingEvent.Title = model.Title;
-                existingEvent.Description = model.Description;
-                existingEvent.Category = model.Category;
-                existingEvent.VenueName = model.VenueName;
-                existingEvent.Location = model.Location;
-                existingEvent.StartDate = model.StartDate;
-                existingEvent.EndDate = model.EndDate;
-                existingEvent.TicketPrice = model.TicketPrice;
-                existingEvent.AvailableTickets = model.AvailableTickets;
-                existingEvent.Status = model.Status;
-                existingEvent.IsActive = model.IsActive;
-                existingEvent.UpdatedAt = DateTime.UtcNow;
-
                 if (model.ImageFile != null)
                 {
-                    existingEvent.ImageUrl = model.ImageUrl;
+                    if (!string.IsNullOrEmpty(existingEvent.ImageUrl))
+                    {
+                        var oldImagePath = Path.Combine(_webHostEnvironment.WebRootPath, existingEvent.ImageUrl.TrimStart('/'));
+                        if (System.IO.File.Exists(oldImagePath))
+                        {
+                            System.IO.File.Delete(oldImagePath);
+                        }
+                    }
+
+                    string wwwRootPath = _webHostEnvironment.WebRootPath;
+                    string fileName = Path.GetFileNameWithoutExtension(model.ImageFile.FileName);
+                    string extension = Path.GetExtension(model.ImageFile.FileName);
+                    fileName = fileName + DateTime.Now.ToString("yymmssfff") + extension;
+                    model.ImageUrl = "/images/" + fileName;
+                    string path = Path.Combine(wwwRootPath, "images", fileName);
+                    using (var fileStream = new FileStream(path, FileMode.Create))
+                    {
+                        await model.ImageFile.CopyToAsync(fileStream);
+                    }
                 }
 
-                await _context.SaveChangesAsync();
+                model.UpdatedAt = DateTime.UtcNow;
+                model.OrganizerId = existingEvent.OrganizerId;
+                model.CreatedAt = existingEvent.CreatedAt;
+
+                try
+                {
+                    _context.Update(model);
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!EventExists(model.Id))
+                    {
+                        return NotFound();
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+
                 TempData["SuccessMessage"] = "Event updated successfully!";
                 return RedirectToAction(nameof(MyEvents));
             }
             return View(model);
         }
 
-        // DELETE EVENT (GET)
         [HttpGet]
         public async Task<IActionResult> DeleteEvent(int id)
         {
@@ -187,7 +205,6 @@ namespace StarEvents.Controllers
             return View(eventToDelete);
         }
 
-        // DELETE EVENT (POST)
         [HttpPost, ActionName("DeleteEvent")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteEventConfirmed(int id)
@@ -201,6 +218,15 @@ namespace StarEvents.Controllers
                 return NotFound();
             }
 
+            if (!string.IsNullOrEmpty(eventToDelete.ImageUrl))
+            {
+                var imagePath = Path.Combine(_webHostEnvironment.WebRootPath, eventToDelete.ImageUrl.TrimStart('/'));
+                if (System.IO.File.Exists(imagePath))
+                {
+                    System.IO.File.Delete(imagePath);
+                }
+            }
+
             _context.Events.Remove(eventToDelete);
             await _context.SaveChangesAsync();
 
@@ -208,7 +234,6 @@ namespace StarEvents.Controllers
             return RedirectToAction(nameof(MyEvents));
         }
 
-        // REPORTS
         public async Task<IActionResult> Reports()
         {
             var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -237,4 +262,3 @@ namespace StarEvents.Controllers
         }
     }
 }
-

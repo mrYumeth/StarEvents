@@ -1,0 +1,98 @@
+﻿@model StarEvents.Models.Event
+@{
+    ViewData["Title"] = "Edit Event";
+}
+
+<div class="container mt-5">
+    <h2 class="mb-4">Edit: @Model.Title</h2>
+
+    <form asp-action="EditEvent" method="post" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="ImageUrl" />
+
+        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+        <div class="mb-3">
+            <label asp-for="Title" class="form-label"></label>
+            <input asp-for="Title" class="form-control" />
+        </div>
+        <div class="mb-3">
+            <label asp-for="Category" class="form-label"></label>
+            <select asp-for="Category" class="form-select">
+                <option value="">-- Select Category --</option>
+                <option value="Music">Music</option>
+                <option value="Comedy">Comedy</option>
+                <option value="Sports">Sports</option>
+                <option value="Theatre">Theatre</option>
+                <option value="Festival">Festival</option>
+                <option value="Conference">Conference</option>
+                <option value="Workshop">Workshop</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label asp-for="VenueName" class="form-label"></label>
+            <input asp-for="VenueName" class="form-control" />
+        </div>
+        <div class="mb-3">
+            <label asp-for="Location" class="form-label"></label>
+            <input asp-for="Location" class="form-control" />
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="StartDate" class="form-label"></label>
+                <input asp-for="StartDate" type="datetime-local" class="form-control" />
+            </div>
+            <div class="col-md-6 mb-3">
+                <label asp-for="EndDate" class="form-label"></label>
+                <input asp-for="EndDate" type="datetime-local" class="form-control" />
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="TicketPrice" class="form-label"></label>
+                <input asp-for="TicketPrice" type="number" step="0.01" class="form-control" />
+            </div>
+            <div class="col-md-6 mb-3">
+                <label asp-for="AvailableTickets" class="form-label"></label>
+                <input asp-for="AvailableTickets" type="number" class="form-control" />
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="ImageFile" class="form-label">Change Event Image (Optional)</label>
+            <input asp-for="ImageFile" class="form-control" type="file" accept="image/*" />
+            @if (!string.IsNullOrEmpty(Model.ImageUrl))
+            {
+                <div class="mt-2">
+                    <p>Current Image:</p>
+                    <img src="@Model.ImageUrl" style="max-width: 200px; border-radius: 8px;" alt="Current Event Image" />
+                </div>
+            }
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Description" class="form-label"></label>
+            <textarea asp-for="Description" class="form-control" rows="4"></textarea>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Status" class="form-label"></label>
+            <select asp-for="Status" class="form-select">
+                <option value="Draft">Draft</option>
+                <option value="Active">Active</option>
+            </select>
+        </div>
+        <div class="mb-3 form-check">
+            <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+            <label asp-for="IsActive" class="form-check-label"></label>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Update Event</button>
+        <a asp-action="MyEvents" class="btn btn-secondary ms-2">Cancel</a>
+    </form>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+}
