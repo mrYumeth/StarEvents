@@ -35,7 +35,7 @@ namespace StarEvents.Controllers
                     }
                     if (await _userManager.IsInRoleAsync(user, "Customer"))
                     {
-                        return RedirectToAction("Dashboard", "Customer"); // Redirects to your /Customer/Dashboard
+                        return RedirectToAction("Dashb  oard", "Customer"); // Redirects to your /Customer/Dashboard
                     }
                 }
             }

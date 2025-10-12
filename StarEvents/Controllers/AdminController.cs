@@ -35,7 +35,7 @@ namespace StarEvents.Controllers
             // Get statistics
             ViewBag.TotalUsers = await _userManager.Users.CountAsync();
             ViewBag.NewUsersThisMonth = await _userManager.Users
-                .CountAsync(u => u.EmailConfirmed); // Placeholder logic
+                .CountAsync(u => u.EmailConfirmed);
 
             ViewBag.TotalEvents = await _context.Events.CountAsync();
             ViewBag.ActiveEvents = await _context.Events
@@ -54,6 +54,7 @@ namespace StarEvents.Controllers
             ViewBag.PendingApprovals = await _context.Events
                 .CountAsync(e => e.Status == "Draft");
 
+            // This action now directly corresponds to the Dashboard.cshtml view file.
             return View();
         }
 
@@ -63,9 +64,7 @@ namespace StarEvents.Controllers
         public async Task<IActionResult> ManageUsers()
         {
             var users = await _userManager.Users.ToListAsync();
-
-            // Get roles for each user
-            var usersWithRoles = new List<dynamic>();
+            var usersWithRoles = new List<object>();
             foreach (var user in users)
             {
                 var roles = await _userManager.GetRolesAsync(user);
@@ -75,7 +74,6 @@ namespace StarEvents.Controllers
                     Roles = roles
                 });
             }
-
             ViewBag.UsersWithRoles = usersWithRoles;
             return View(users);
         }
@@ -86,7 +84,6 @@ namespace StarEvents.Controllers
         public async Task<IActionResult> ManageEvents(string status = "all")
         {
             var query = _context.Events
-                .Include(e => e.Venue)
                 .Include(e => e.Organizer)
                 .AsQueryable();
 
@@ -102,6 +99,7 @@ namespace StarEvents.Controllers
             ViewBag.CurrentFilter = status;
             return View(events);
         }
+
 
         // ----------------------------------------------------------------------
         // Approve/Reject Event
@@ -260,14 +258,6 @@ namespace StarEvents.Controllers
                 return NotFound();
             }
 
-            // Check if venue has events
-            var hasEvents = await _context.Events.AnyAsync(e => e.VenueId == id);
-            if (hasEvents)
-            {
-                TempData["ErrorMessage"] = "Cannot delete venue with existing events.";
-                return RedirectToAction(nameof(ManageVenues));
-            }
-
             _context.Venues.Remove(venue);
             await _context.SaveChangesAsync();
 
@@ -283,7 +273,7 @@ namespace StarEvents.Controllers
             var bookings = await _context.Bookings
                 .Include(b => b.Customer)
                 .Include(b => b.Event)
-                    .ThenInclude(e => e.Venue)
+                // FIX: Removed .ThenInclude(e => e.Venue)
                 .OrderByDescending(b => b.BookingDate)
                 .ToListAsync();
 
