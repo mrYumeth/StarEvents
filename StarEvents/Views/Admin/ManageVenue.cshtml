@@ -1,0 +1,327 @@
+﻿@model IEnumerable<StarEvents.Models.Venue>
+@{
+    ViewData["Title"] = "Manage Venues";
+}
+
+<style>
+    .manage-venues-container {
+        padding: 40px 0;
+    }
+
+    .page-header {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        padding: 30px 40px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+        .page-header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+    .btn-add-venue {
+        background: white;
+        color: #dc3545;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 25px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+        .btn-add-venue:hover {
+            background: #f8f9fa;
+            color: #dc3545;
+        }
+
+    .venues-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 25px;
+    }
+
+    .venue-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+    }
+
+        .venue-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+    .venue-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 20px;
+    }
+
+    .venue-icon {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+    }
+
+    .venue-status {
+        padding: 5px 12px;
+        border-radius: 15px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .status-active {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .status-inactive {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .venue-name {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 15px;
+    }
+
+    .venue-details {
+        margin-bottom: 20px;
+    }
+
+    .venue-detail-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+        color: #666;
+        font-size: 0.95rem;
+    }
+
+    .detail-icon {
+        font-size: 1.1rem;
+    }
+
+    .venue-capacity {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 10px;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .capacity-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #dc3545;
+    }
+
+    .capacity-label {
+        font-size: 0.85rem;
+        color: #666;
+    }
+
+    .venue-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn-action {
+        flex: 1;
+        padding: 10px;
+        border-radius: 8px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+    }
+
+    .btn-edit {
+        background: #007bff;
+        color: white;
+    }
+
+        .btn-edit:hover {
+            background: #0056b3;
+            color: white;
+        }
+
+    .btn-delete {
+        background: #dc3545;
+        color: white;
+    }
+
+        .btn-delete:hover {
+            background: #c82333;
+        }
+
+    .no-venues {
+        text-align: center;
+        padding: 80px 20px;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    }
+
+        .no-venues h3 {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+    @@media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .venues-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="manage-venues-container">
+    <div class="container">
+        <!-- Header -->
+        <div class="page-header">
+            <h1>🏢 Manage Venues</h1>
+            <a href="@Url.Action("CreateVenue", "Admin")" class="btn-add-venue">+ Add New Venue</a>
+        </div>
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @TempData["SuccessMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @TempData["ErrorMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <!-- Venues Grid -->
+        @if (Model != null && Model.Any())
+        {
+            <div class="venues-grid">
+                @foreach (var venue in Model)
+                {
+                    <div class="venue-card">
+                        <div class="venue-header">
+                            <div class="venue-icon">🏢</div>
+                            <span class="venue-status status-@(venue.IsActive ? "active" : "inactive")">
+                                @(venue.IsActive ? "Active" : "Inactive")
+                            </span>
+                        </div>
+
+                        <h3 class="venue-name">@venue.VenueName</h3>
+
+                        <div class="venue-details">
+                            <div class="venue-detail-item">
+                                <span class="detail-icon">📍</span>
+                                <span>@venue.Address</span>
+                            </div>
+                            <div class="venue-detail-item">
+                                <span class="detail-icon">🌆</span>
+                                <span>@venue.City</span>
+                            </div>
+                            @if (!string.IsNullOrEmpty(venue.PhoneNumber))
+                            {
+                                <div class="venue-detail-item">
+                                    <span class="detail-icon">📞</span>
+                                    <span>@venue.PhoneNumber</span>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="venue-capacity">
+                            <div class="capacity-value">@venue.Capacity.ToString("N0")</div>
+                            <div class="capacity-label">Max Capacity</div>
+                        </div>
+
+                        <div class="venue-actions">
+                            <a href="@Url.Action("EditVenue", "Admin", new { id = venue.Id })" class="btn-action btn-edit">
+                                ✏️ Edit
+                            </a>
+                            <button type="button" class="btn-action btn-delete"
+                                    onclick="confirmDelete(@venue.Id, '@venue.VenueName')">
+                                🗑️ Delete
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="no-venues">
+                <h3>No Venues Found</h3>
+                <p>Start by adding your first venue.</p>
+                <a href="@Url.Action("CreateVenue", "Admin")" class="btn-add-venue">+ Add New Venue</a>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Venue</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="DeleteVenue" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="deleteVenueId" />
+                <div class="modal-body">
+                    <p><strong>Are you sure you want to delete this venue?</strong></p>
+                    <p id="deleteVenueName" class="text-danger"></p>
+                    <div class="alert alert-warning">
+                        ⚠️ This action cannot be undone. Ensure no events are associated with this venue.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Delete Venue</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function confirmDelete(venueId, venueName) {
+            document.getElementById('deleteVenueId').value = venueId;
+            document.getElementById('deleteVenueName').textContent = venueName;
+            var modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            modal.show();
+        }
+    </script>
+}
