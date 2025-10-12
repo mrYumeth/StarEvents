@@ -1,0 +1,211 @@
+﻿@using System.Security.Claims
+@model IEnumerable<StarEvents.Models.Event>
+@{
+    ViewData["Title"] = "Sales & Revenue Reports";
+    var organizerName = User.Identity.Name; // Get the logged-in organizer's name
+}
+
+@section Styles {
+    <style>
+        .report-header {
+            background: linear-gradient(135deg, #007991 0%, #78ffd6 100%);
+            color: white;
+            padding: 40px 0;
+            margin-bottom: 40px;
+            border-radius: 15px;
+        }
+
+        .stats-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            height: 100%;
+        }
+
+            .stats-card h3 {
+                font-size: 2.5rem;
+                font-weight: 700;
+                color: #007991;
+            }
+
+            .stats-card p {
+                color: #666;
+                font-size: 1rem;
+                margin: 0;
+            }
+
+        .chart-container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        /* Hide button during print/PDF generation */
+        @@media print {
+            #downloadPdfBtn {
+                display: none;
+            }
+        }
+    </style>
+}
+
+<div class="report-header">
+    <div class="container d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div class="text-start">
+            <h1>Sales & Revenue Reports</h1>
+            <p class="lead mb-0">An overview of your event performance.</p>
+        </div>
+        <button id="downloadPdfBtn" class="btn btn-light">
+            <i class="fas fa-download"></i> Download as PDF
+        </button>
+    </div>
+</div>
+
+<div class="container" id="reportContent">
+    <!-- Stat Cards -->
+    <div class="row mb-5">
+        <div class="col-md-4 mb-4">
+            <div class="stats-card">
+                <h3>@ViewBag.TotalEvents</h3>
+                <p>Total Events</p>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="stats-card">
+                <h3>@ViewBag.TotalTicketsSold</h3>
+                <p>Total Tickets Sold</p>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="stats-card">
+                <h3>LKR @ViewBag.TotalRevenue</h3>
+                <p>Total Revenue</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="chart-container mb-5">
+        <h3 class="mb-4">Revenue per Event</h3>
+        <canvas id="revenueChart"></canvas>
+    </div>
+
+    <!-- Detailed Table -->
+    <h3 class="mb-4">Detailed Breakdown</h3>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Event Name</th>
+                    <th>Tickets Sold</th>
+                    <th>Revenue (LKR)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var evt in Model)
+                {
+                    var ticketsSold = evt.Bookings.Where(b => b.Status == "Confirmed" || b.Status == "Completed").Sum(b => b.TicketQuantity);
+                    var revenue = evt.Bookings.Where(b => b.Status == "Confirmed" || b.Status == "Completed").Sum(b => b.TotalAmount);
+                    <tr>
+                        <td>@evt.Title</td>
+                        <td>@ticketsSold</td>
+                        <td>@revenue.ToString("N2")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // --- Chart.js setup ---
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+            const eventLabels = @Html.Raw(Json.Serialize(Model.Select(e => e.Title)));
+            const revenueData = @Html.Raw(Json.Serialize(Model.Select(e => e.Bookings.Where(b => b.Status == "Confirmed" || b.Status == "Completed").Sum(b => b.TotalAmount))));
+
+            const revenueChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: eventLabels,
+                    datasets: [{
+                        label: 'Revenue (LKR)',
+                        data: revenueData,
+                        backgroundColor: 'rgba(0, 121, 145, 0.6)',
+                        borderColor: 'rgba(0, 121, 145, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    animation: false, // Disable animation for better PDF capture
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: '#666', callback: function(value) { return 'LKR ' + value.toLocaleString(); } }
+                        },
+                        x: { ticks: { color: '#666' } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // --- PDF Download Logic ---
+            const { jsPDF } = window.jspdf;
+
+            document.getElementById('downloadPdfBtn').addEventListener('click', function () {
+                const reportContent = document.getElementById('reportContent');
+                const button = this;
+                const organizerName = "@organizerName";
+                const reportDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+                button.disabled = true;
+
+                html2canvas(reportContent, {
+                    scale: 2,
+                    logging: false,
+                    useCORS: true
+                }).then(canvas => {
+                    const imgData = canvas.toDataURL('image/png');
+                    const pdf = new jsPDF({
+                        orientation: 'p',
+                        unit: 'px',
+                        format: 'a4'
+                    });
+
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = pdf.internal.pageSize.getHeight();
+                    const canvasWidth = canvas.width;
+                    const canvasHeight = canvas.height;
+                    const ratio = canvasWidth / canvasHeight;
+                    const imgWidth = pdfWidth - 40; // pdf width with margin
+                    const imgHeight = imgWidth / ratio;
+
+                    // Add a professional header
+                    pdf.setFontSize(22);
+                    pdf.setTextColor('#007991');
+                    pdf.text('StarEvents - Sales & Revenue Report', 20, 30);
+
+                    pdf.setFontSize(12);
+                    pdf.setTextColor('#333');
+                    pdf.text(`Organizer: ${organizerName}`, 20, 50);
+                    pdf.text(`Report Generated: ${reportDate}`, 20, 65);
+
+                    // Add the captured content as an image
+                    pdf.addImage(imgData, 'PNG', 20, 85, imgWidth, imgHeight);
+
+                    const fileNameDate = new Date().toISOString().slice(0, 10);
+                    pdf.save(`StarEvents_Report_${fileNameDate}.pdf`);
+
+                    button.innerHTML = '<i class="fas fa-download"></i> Download as PDF';
+                    button.disabled = false;
+                });
+            });
+        });
+    </script>
+}
+
