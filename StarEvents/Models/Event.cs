@@ -73,6 +73,6 @@ namespace StarEvents.Models
         public DateTime? UpdatedAt { get; set; }
 
         // Navigation Property for Bookings
-        public ICollection<Booking> Bookings { get; set; }
+        public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
     }
 }

@@ -1,7 +1,7 @@
 @model IEnumerable<StarEvents.ViewModels.AdminUserViewModel>
 @{
     ViewData["Title"] = "User Management";
-    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -38,7 +38,7 @@
                             <input type="checkbox" class="form-check-input" />
                         </td>
                         <td>
-                            <strong>@user.FullName</strong>
+                            <strong>@user.FirstName</strong>
                             <br><small class="text-muted">ID: @user.Id.Substring(0, 8)...</small>
                         </td>
                         <td>

@@ -1,109 +1,46 @@
 @model IEnumerable<StarEvents.Models.Event>
 @{
-    ViewData["Title"] = "Event Management";
-    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Manage Events";
 }
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Events</h2>
+        <div>
+            <a class="btn btn-outline-light" asp-action="Venues">Manage Venues</a>
+            <a class="btn btn-primary ms-2" asp-action="CreateEvent">Create Event</a>
+        </div>
+    </div>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="fas fa-calendar-alt"></i> Event Management</h2>
-    <a asp-action="CreateEvent" class="btn btn-admin btn-admin-primary">
-        <i class="fas fa-plus"></i> Create New Event
-    </a>
-</div>
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
 
-<div class="admin-table">
-    <div class="table-responsive">
-        <table class="table table-hover">
-            <thead>
+    <table class="table table-striped table-hover table-dark align-middle">
+        <thead>
+            <tr><th>Title</th><th>When</th><th>Venue</th><th>Price</th><th>Available</th><th></th></tr>
+        </thead>
+        <tbody>
+            @foreach (var e in Model)
+            {
                 <tr>
-                    <th>
-                        <input type="checkbox" class="form-check-input" onchange="selectAll(this)" />
-                    </th>
-                    <th>Title</th>
-                    <th>Category</th>
-                    <th>Organizer</th>
-                    <th>Venue</th>
-                    <th>Start Date</th>
-                    <th>Status</th>
-                    <th>Bookings</th>
-                    <th>Actions</th>
+                    <td>@e.Title</td>
+                    <td>@e.StartDate.ToString("yyyy-MM-dd")</td>
+                    <td>@(e.Venue?.VenueName ?? "-")</td>
+                    <td>@e.TicketPrice.ToString("C")</td>
+                    <td>@(e.AvailableTickets ?? 0)</td>
+                    <td class="text-end">
+                        <a class="btn btn-sm btn-outline-secondary" asp-action="EditEvent" asp-route-id="@e.Id">Edit</a>
+                        <form method="post" asp-action="DeleteEvent" asp-route-id="@e.Id" class="d-inline" onsubmit="return confirm('Delete this event?');">
+                            <button class="btn btn-sm btn-danger">Delete</button>
+                        </form>
+                    </td>
                 </tr>
-            </thead>
-            <tbody>
-                @foreach (var eventItem in Model)
-                {
-                    <tr>
-                        <td>
-                            <input type="checkbox" class="form-check-input" />
-                        </td>
-                        <td>
-                            <strong>@eventItem.Title</strong>
-                            @if (!string.IsNullOrEmpty(eventItem.Description))
-                            {
-                                <br><small class="text-muted">@(eventItem.Description.Length > 50 ? eventItem.Description.Substring(0, 50) + "..." : eventItem.Description)</small>
-                            }
-                        </td>
-                        <td>
-                            <span class="badge bg-secondary">@(eventItem.Category ?? "Uncategorized")</span>
-                        </td>
-                        <td>
-                            <i class="fas fa-user"></i> @eventItem.Organizer?.FirstName @eventItem.Organizer?.LastName
-                            <br><small class="text-muted">@eventItem.Organizer?.Email</small>
-                        </td>
-                        <td>
-                            <i class="fas fa-map-marker-alt"></i> @eventItem.Venue?.VenueName
-                            <br><small class="text-muted">@eventItem.Venue?.City</small>
-                        </td>
-                        <td>
-                            @eventItem.StartDate.ToString("MMM dd, yyyy")
-                            <br><small class="text-muted">@eventItem.StartDate.ToString("HH:mm")</small>
-                        </td>
-                        <td>
-                            <span class="status-badge status-@eventItem.Status.ToLower()">@eventItem.Status</span>
-                        </td>
-                        <td>
-                            <span class="badge bg-info">@(eventItem.Bookings?.Count ?? 0) bookings</span>
-                        </td>
-                        <td>
-                            <div class="btn-group btn-group-sm">
-                                <a asp-action="EditEvent" asp-route-id="@eventItem.Id" class="btn btn-outline-primary" title="Edit">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <form asp-action="DeleteEvent" asp-route-id="@eventItem.Id" method="post" class="d-inline">
-                                    <button type="submit" class="btn btn-outline-danger" 
-                                            data-confirm-delete="true" 
-                                            data-confirm-message="Are you sure you want to delete this event? This action cannot be undone." 
-                                            title="Delete">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+            }
+        </tbody>
+    </table>
 </div>
-
-@if (!Model.Any())
-{
-    <div class="text-center py-5">
-        <i class="fas fa-calendar-alt fa-3x text-muted mb-3"></i>
-        <h4 class="text-muted">No events found</h4>
-        <p class="text-muted">Create your first event to get started.</p>
-        <a asp-action="CreateEvent" class="btn btn-admin btn-admin-primary">
-            <i class="fas fa-plus"></i> Create Event
-        </a>
-    </div>
-}
-
-@section Scripts {
-    <script>
-        function selectAll(checkbox) {
-            const table = checkbox.closest('table');
-            const checkboxes = table.querySelectorAll('tbody input[type="checkbox"]');
-            checkboxes.forEach(cb => cb.checked = checkbox.checked);
-        }
-    </script>
-}

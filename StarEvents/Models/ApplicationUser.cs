@@ -12,6 +12,7 @@ namespace StarEvents.Models
         public int LoyaltyPoints { get; set; } = 0;
 
         // Navigation properties for relationships
+       
         public virtual ICollection<Booking>? Bookings { get; set; }
         public virtual ICollection<CustomerPayment>? Payments { get; set; }
         public virtual ICollection<Event>? OrganizedEvents { get; set; }

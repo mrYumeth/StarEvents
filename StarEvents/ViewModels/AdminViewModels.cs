@@ -1,5 +1,7 @@
-using System.ComponentModel.DataAnnotations;
 using StarEvents.Models;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace StarEvents.ViewModels
 {
@@ -17,38 +19,34 @@ namespace StarEvents.ViewModels
     {
         public int Id { get; set; }
 
-        [Required(ErrorMessage = "Event title is required")]
-        [StringLength(250, ErrorMessage = "Title cannot exceed 250 characters")]
-        [Display(Name = "Event Title")]
+        [Required, StringLength(250)]
         public string Title { get; set; } = string.Empty;
 
-        [Display(Name = "Description")]
         public string? Description { get; set; }
 
-        [StringLength(100, ErrorMessage = "Category cannot exceed 100 characters")]
-        [Display(Name = "Category")]
+        [StringLength(100)]
         public string? Category { get; set; }
 
-        [Required(ErrorMessage = "Start date is required")]
-        [Display(Name = "Start Date")]
-        public DateTime StartDate { get; set; } = DateTime.Now.AddDays(1);
+        [Required]
+        public DateTime StartDate { get; set; } = DateTime.UtcNow.AddDays(1);
 
-        [Display(Name = "End Date")]
         public DateTime? EndDate { get; set; }
 
-        [Required(ErrorMessage = "Status is required")]
-        [Display(Name = "Status")]
+        [Required]
         public string Status { get; set; } = "Draft";
 
-        [Required(ErrorMessage = "Venue is required")]
-        [Display(Name = "Venue")]
+        [Required]
         public int VenueId { get; set; }
 
-        [Required(ErrorMessage = "Organizer is required")]
-        [Display(Name = "Organizer")]
+        [Required]
         public string OrganizerId { get; set; } = string.Empty;
 
-        // Navigation properties for dropdowns
+        [Range(0, double.MaxValue)]
+        public decimal TicketPrice { get; set; } = 0m;
+
+        [Range(0, int.MaxValue)]
+        public int AvailableTickets { get; set; } = 0;
+
         public List<Venue> Venues { get; set; } = new();
         public List<ApplicationUser> Organizers { get; set; } = new();
     }
@@ -63,10 +61,7 @@ namespace StarEvents.ViewModels
         public int LoyaltyPoints { get; set; }
         public bool EmailConfirmed { get; set; }
         public List<string> Roles { get; set; } = new();
-        public DateTime CreatedAt { get; set; }
-
-        [Display(Name = "Full Name")]
-        public string FullName => $"{FirstName} {LastName}";
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 
     public class AdminReportsViewModel
@@ -78,27 +73,7 @@ namespace StarEvents.ViewModels
         public List<TopEventStats> TopEvents { get; set; } = new();
     }
 
-    public class CategoryStats
-    {
-        public string Category { get; set; } = string.Empty;
-        public int Count { get; set; }
-    }
-
-    public class MonthlyRevenue
-    {
-        public int Year { get; set; }
-        public int Month { get; set; }
-        public decimal Revenue { get; set; }
-        public int TicketsSold { get; set; }
-
-        [Display(Name = "Month")]
-        public string MonthName => new DateTime(Year, Month, 1).ToString("MMMM yyyy");
-    }
-
-    public class TopEventStats
-    {
-        public string EventTitle { get; set; } = string.Empty;
-        public int TicketsSold { get; set; }
-        public decimal Revenue { get; set; }
-    }
+    public class CategoryStats { public string Category { get; set; } = ""; public int Count { get; set; } }
+    public class MonthlyRevenue { public int Year { get; set; } public int Month { get; set; } public decimal Revenue { get; set; } public int TicketsSold { get; set; } }
+    public class TopEventStats { public string EventTitle { get; set; } = ""; public int TicketsSold { get; set; } public decimal Revenue { get; set; } }
 }
