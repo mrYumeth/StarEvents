@@ -9,7 +9,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - StarEvents</title>
 
-    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
 
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
@@ -18,7 +17,10 @@
     <style>
         body {
             background-color: #111827;
-            color: #e6e6e6;
+            color:white;
+            display: flex; /* This is the key change */
+            flex-direction: column; /* This is the key change */
+            min-height: 100vh; /* This is the key change */
         }
 
         header, footer {
@@ -26,8 +28,16 @@
             color: #e6e6e6;
         }
 
+        .mt-auto {
+            margin-top: auto !important; /* This is the key part for pushing the footer down */
+        }
+
+        footer {
+            border-top: 1px solid #1e293b;
+        }
+
         .card {
-            background-color: #0b1220;
+            background-color:dodgerblue;
             color: #e6e6e6;
         }
 
@@ -75,7 +85,6 @@
                             }
                         }
                     </ul>
-
                     <partial name="_LoginPartial" />
                 </div>
             </div>
@@ -89,7 +98,7 @@
     </div>
 
     <footer class="py-3 mt-auto">
-        <div class="container text-center text-muted">
+        <div class="container text-center text-muted" style="color: white;">
             &copy; @DateTime.Now.Year - StarEvents
         </div>
     </footer>
