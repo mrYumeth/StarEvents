@@ -66,14 +66,13 @@
 
                         @if (SignInManager.IsSignedIn(User))
                         {
-                            // --- LINKS FOR ALL LOGGED-IN USERS ---
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Home" asp-action="Index">Home</a>
-                            </li>
-
+                            
                             @if (User.IsInRole("Customer"))
                             {
                                 // --- CUSTOMER-SPECIFIC LINKS ---
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Customer" asp-action="Dashboard">Home</a>
+                                </li>
                                 <li class="nav-item">
                                     <a class="nav-link" asp-controller="Events" asp-action="Index">Browse Events</a>
                                 </li>
@@ -85,7 +84,16 @@
                             {
                                 // --- ORGANIZER-SPECIFIC LINKS ---
                                 <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Organizers" asp-action="MyEvents">My Events</a>
+                                    <a class="nav-link text-dark" asp-controller="Organizers" asp-action="Index">Home</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Organizers" asp-action="MyEvents">My Events</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Organizers" asp-action="CreateEvent">Create Event</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Organizers" asp-action="Reports">Reports</a>
                                 </li>
                             }
                             else if (User.IsInRole("Admin"))
