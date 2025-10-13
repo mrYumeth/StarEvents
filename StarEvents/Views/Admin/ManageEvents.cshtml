@@ -253,9 +253,9 @@
                                 </td>
                                 <td>
                                     <div class="action-buttons">
-                                        <a href="@Url.Action("Details", "Events", new { id = evt.Id })"
-                                           class="btn-action btn-view" title="View">
-                                            👁️
+                                        <a href="@Url.Action("EditEvent", "Admin", new { id = evt.Id })"
+                                           class="btn-action btn-edit" title="Edit">
+                                            ✏️
                                         </a>
 
                                         @if (evt.Status == "Draft")
