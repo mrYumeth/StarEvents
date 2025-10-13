@@ -37,7 +37,6 @@ namespace StarEvents.Controllers
         // 1. Dashboard - The main customer landing page after login.
         // ----------------------------------------------------------------------
         // GET: /Customer/Dashboard
-
         public async Task<IActionResult> Dashboard()
         {
             var user = await _userManager.GetUserAsync(User);
@@ -53,10 +52,8 @@ namespace StarEvents.Controllers
                 .OrderByDescending(b => b.BookingDate)
                 .ToListAsync();
 
-            // --- THIS BLOCK WAS MOVED HERE (THE CORRECT PLACE) ---
             var featuredEvents = await _context.Events
                 .Where(e => e.IsActive && e.StartDate > DateTime.Now)
-                // The invalid .Include(e => e.Venue) has been removed
                 .OrderBy(e => e.StartDate)
                 .Take(3)
                 .ToListAsync();
@@ -73,16 +70,15 @@ namespace StarEvents.Controllers
                 TotalSpent = confirmedBookings.Sum(b => b.TotalAmount),
                 LoyaltyPoints = user.LoyaltyPoints,
                 RecentBookings = allUserBookings.Where(b => b.Status == "Confirmed").Take(5).ToList(),
-
-                // --- THIS IS THE CORRECT ASSIGNMENT ---
                 FeaturedEvents = featuredEvents
-            }; // <-- The closing brace was also missing
+            };
 
             return View(dashboardViewModel);
         }
 
         // ----------------------------------------------------------------------
-        // 2. Profile - Placeholder for viewing/editing customer profile.
+        // 2. Profile - Loads the profile editing view.
+        // ----------------------------------------------------------------------
         // ----------------------------------------------------------------------
         // GET: /Customer/Profile
         public async Task<IActionResult> Profile()
@@ -90,50 +86,67 @@ namespace StarEvents.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                return RedirectToPage("/Account/Login", new { area = "Identity" });
+                return Challenge();
             }
 
-            // Profile viewing/editing logic will go here.
-            return View(user);
+            var profileViewModel = new ProfileViewModel
+            {
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Email = user.Email
+            };
+
+            return View(profileViewModel);
         }
 
-        // ----------------------------------------------------------------------
-        // 3. Update Profile - Handle profile updates
-        // ----------------------------------------------------------------------
-        // POST: /Customer/Profile
+        // POST: /Customer/Profile (Final Corrected Version)
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Profile(ApplicationUser model)
+        public async Task<IActionResult> Profile(ProfileViewModel model)
         {
             if (!ModelState.IsValid)
             {
+                // If validation fails, repopulate the email before returning the view
+                var currentUserForEmail = await _userManager.GetUserAsync(User);
+                if (currentUserForEmail != null)
+                {
+                    model.Email = currentUserForEmail.Email;
+                }
                 return View(model);
             }
 
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                return RedirectToPage("/Account/Login", new { area = "Identity" });
+                return NotFound("Unable to load user.");
             }
 
-            // Update only allowed fields
+            // Update the properties of the user object
             user.FirstName = model.FirstName;
             user.LastName = model.LastName;
-            user.PhoneNumber = model.PhoneNumber;
-            // Add other fields as needed
 
+            // --- DATABASE SAVE FIX ---
+            // Use the UserManager to update the user.
             var result = await _userManager.UpdateAsync(user);
 
             if (result.Succeeded)
             {
+                // As an extra measure, explicitly save changes on the context.
+                // While UpdateAsync often handles this, this ensures it happens.
+                await _context.SaveChangesAsync();
+
                 TempData["SuccessMessage"] = "Profile updated successfully!";
                 return RedirectToAction(nameof(Profile));
             }
 
+            // If the update fails, add errors to the model state
             foreach (var error in result.Errors)
             {
                 ModelState.AddModelError(string.Empty, error.Description);
             }
+
+            // Repopulate the email as it's not part of the form submission
+            model.Email = user.Email;
 
             return View(model);
         }
