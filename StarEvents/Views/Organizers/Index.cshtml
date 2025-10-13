@@ -152,7 +152,7 @@
 <div class="dashboard-container">
     <div class="container">
         <div class="welcome-section">
-            <h1>Welcome back, @User.Identity.Name! 🎤</h1>
+            <h1>Welcome back, @ViewBag.OrganizerName! 🎤</h1>
             <p>Here's a snapshot of your event activities.</p>
         </div>
 
@@ -183,7 +183,7 @@
         <div>
             <h2 class="section-title">⚡ Quick Actions</h2>
             <div class="row">
-                <div class="col-md-4 col-sm-6 mb-4">
+                <div class="col-md-3 col-sm-6 mb-4">
                     <div class="quick-action-card">
                         <div class="quick-action-icon"><img src="/images/browse-icon.jpg" alt="Create Event" /></div>
                         <h3 class="quick-action-title">Create a New Event</h3>
@@ -191,7 +191,7 @@
                         <a asp-action="CreateEvent" class="btn btn-action">Create Event</a>
                     </div>
                 </div>
-                <div class="col-md-4 col-sm-6 mb-4">
+                <div class="col-md-3 col-sm-6 mb-4">
                     <div class="quick-action-card">
                         <div class="quick-action-icon"><img src="/images/bookings-action-icon.jpg" alt="My Events" /></div>
                         <h3 class="quick-action-title">Manage My Events</h3>
@@ -199,12 +199,20 @@
                         <a asp-action="MyEvents" class="btn btn-action">My Events</a>
                     </div>
                 </div>
-                <div class="col-md-4 col-sm-6 mb-4">
+                <div class="col-md-3 col-sm-6 mb-4">
                     <div class="quick-action-card">
                         <div class="quick-action-icon"><img src="/images/payment-icon.jpg" alt="Sales Reports" /></div>
                         <h3 class="quick-action-title">Sales & Revenue Reports</h3>
                         <p class="quick-action-desc">Track ticket sales and revenue for your events.</p>
                         <a asp-action="Reports" class="btn btn-action">View Reports</a>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6 mb-4">
+                    <div class="quick-action-card">
+                        <div class="quick-action-icon"><img src="/images/profile-icon.jpg" alt="Edit Profile" /></div>
+                        <h3 class="quick-action-title">Edit My Profile</h3>
+                        <p class="quick-action-desc">Update your personal account information.</p>
+                        <a asp-action="EditProfile" class="btn btn-action">Edit Profile</a>
                     </div>
                 </div>
             </div>

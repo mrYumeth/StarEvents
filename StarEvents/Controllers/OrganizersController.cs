@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity; // <-- Add this using statement
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StarEvents.Data;
 using StarEvents.Models;
+using StarEvents.ViewModels; // <-- Add this using statement
 using System;
 using System.IO;
 using System.Linq;
@@ -17,12 +19,18 @@ namespace StarEvents.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IWebHostEnvironment _webHostEnvironment;
+        // --- ADD THIS LINE ---
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public OrganizersController(ApplicationDbContext context, IWebHostEnvironment webHostEnvironment)
+        // --- UPDATE THE CONSTRUCTOR ---
+        public OrganizersController(ApplicationDbContext context, IWebHostEnvironment webHostEnvironment, UserManager<ApplicationUser> userManager)
         {
             _context = context;
             _webHostEnvironment = webHostEnvironment;
+            _userManager = userManager; // Assign the user manager
         }
+
+        // ... (Your existing code from Index() to EventExists() remains unchanged here) ...
 
         public async Task<IActionResult> Index()
         {
@@ -41,6 +49,9 @@ namespace StarEvents.Controllers
                 .SelectMany(e => e.Bookings)
                 .Where(b => b.Status == "Confirmed" || b.Status == "Completed")
                 .Sum(b => b.TotalAmount);
+
+            var user = await _userManager.GetUserAsync(User);
+            ViewBag.OrganizerName = user?.FirstName ?? "Organizer";
 
             return View();
         }
@@ -260,5 +271,67 @@ namespace StarEvents.Controllers
         {
             return _context.Events.Any(e => e.Id == id);
         }
+
+
+        // --- ADD THIS NEW SECTION FOR PROFILE EDITING ---
+        #region Profile Management
+
+        [HttpGet]
+        public async Task<IActionResult> EditProfile()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return Challenge();
+            }
+
+            var profileViewModel = new ProfileViewModel
+            {
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Email = user.Email
+            };
+
+            return View(profileViewModel);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditProfile(ProfileViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                var userForEmail = await _userManager.GetUserAsync(User);
+                if (userForEmail != null) model.Email = userForEmail.Email;
+                return View(model);
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return NotFound("Unable to load user.");
+            }
+
+            user.FirstName = model.FirstName;
+            user.LastName = model.LastName;
+
+            var result = await _userManager.UpdateAsync(user);
+
+            if (result.Succeeded)
+            {
+                TempData["SuccessMessage"] = "Profile updated successfully!";
+                return RedirectToAction(nameof(EditProfile));
+            }
+
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
+
+            model.Email = user.Email;
+            return View(model);
+        }
+
+        #endregion
     }
 }
