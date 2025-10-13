@@ -5,11 +5,12 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using StarEvents.Data;
 using StarEvents.Models;
+using StarEvents.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace StarEvents.Controllers
 {
@@ -153,6 +154,8 @@ namespace StarEvents.Controllers
         // ----------------------------------------------------------------------
         // Manage Users (List)
         // ----------------------------------------------------------------------
+        // --- UPDATE this method ---
+        // GET: /Admin/ManageUsers
         public async Task<IActionResult> ManageUsers()
         {
             var users = await _userManager.Users.ToListAsync();
@@ -162,7 +165,57 @@ namespace StarEvents.Controllers
                 var roles = await _userManager.GetRolesAsync(user);
                 usersWithRoles.Add(new { User = user, Roles = roles });
             }
+
+            // NEW: Pass the list of all roles to the view for the "Add User" modal dropdown.
+            ViewBag.AllRoles = await _roleManager.Roles.Select(r => r.Name).ToListAsync();
+
             return View(usersWithRoles);
+        }
+
+        // --- ADD THIS NEW ACTION ---
+        // POST: /Admin/CreateUser
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateUser(CreateUserViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                // Check if a user with this email already exists
+                var existingUser = await _userManager.FindByEmailAsync(model.Email);
+                if (existingUser != null)
+                {
+                    TempData["ErrorMessage"] = "A user with this email already exists.";
+                    return RedirectToAction(nameof(ManageUsers));
+                }
+
+                var user = new ApplicationUser
+                {
+                    UserName = model.Email,
+                    Email = model.Email,
+                    FirstName = model.FirstName,
+                    LastName = model.LastName,
+                    EmailConfirmed = true // Admins create confirmed users by default
+                };
+
+                var result = await _userManager.CreateAsync(user, model.Password);
+
+                if (result.Succeeded)
+                {
+                    // Add the user to the selected role
+                    await _userManager.AddToRoleAsync(user, model.Role);
+                    TempData["SuccessMessage"] = "User created successfully!";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "Failed to create user. Please check the details and try again.";
+                }
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Invalid data submitted. Please correct the errors and try again.";
+            }
+
+            return RedirectToAction(nameof(ManageUsers));
         }
 
         // ----------------------------------------------------------------------
