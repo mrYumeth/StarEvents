@@ -14,7 +14,6 @@ namespace StarEvents.Data
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
-        public DbSet<Venue> Venues { get; set; }
         public DbSet<Event> Events { get; set; }
         public DbSet<Booking> Bookings { get; set; }
         public DbSet<CustomerPayment> Payments { get; set; }
@@ -107,15 +106,6 @@ namespace StarEvents.Data
                 customerUser = new ApplicationUser { UserName = "test@gmail.com", Email = "test@gmail.com", FirstName = "John", LastName = "Doe", LoyaltyPoints = 50, EmailConfirmed = true };
                 await userManager.CreateAsync(customerUser, "Test@123#");
                 await userManager.AddToRoleAsync(customerUser, "Customer");
-            }
-
-            if (!context.Venues.Any())
-            {
-                context.Venues.AddRange(
-                    new Venue { VenueName = "Colombo Arena", Address = "123 Galle Road", City = "Colombo", Capacity = 15000, IsActive = true },
-                    new Venue { VenueName = "Kandy City Hall", Address = "456 Temple Street", City = "Kandy", Capacity = 5000, IsActive = true }
-                );
-                await context.SaveChangesAsync();
             }
 
             if (!context.Events.Any())
