@@ -353,9 +353,85 @@ namespace StarEvents.Controllers
         #endregion
 
 
-        public IActionResult SystemSettings()
+        // ----------------------------------------------------------------------
+        // System Settings (GET) - UPDATED
+        // ----------------------------------------------------------------------
+        [HttpGet]
+        public async Task<IActionResult> SystemSettings()
         {
-            return View();
+            // There should only ever be one row of settings.
+            // We use FirstOrDefault to get it, or null if the table is empty.
+            var settings = await _context.SystemSettings.FirstOrDefaultAsync();
+
+            // If no settings exist yet, create a new object with default values.
+            if (settings == null)
+            {
+                settings = new SystemSetting
+                {
+                    SystemName = "StarEvents",
+                    ContactEmail = "support@starevents.com",
+                    MaxTicketsPerBooking = 10,
+                    BookingCancellationHours = 48,
+                    EnableQRCodeTickets = true,
+                    AcceptCreditCards = true,
+                    AcceptPayPal = true,
+                    Currency = "LKR",
+                    EnableLoyaltyProgram = true,
+                    PointsPer100LKR = 1,
+                    PointsExpiryDays = 365,
+                    EmailOnBookingConfirmation = true,
+                    EmailOnEventReminder = true,
+                    RequireEmailVerification = true,
+                    SessionTimeoutMinutes = 30,
+                    PasswordMinLength = 6
+                };
+            }
+
+            return View(settings);
+        }
+
+        // ----------------------------------------------------------------------
+        // System Settings (POST) - NEW ACTION
+        // ----------------------------------------------------------------------
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateSettings(SystemSetting model)
+        {
+            // This custom model binding is needed to correctly handle unchecked checkboxes,
+            // which are not sent in the form data. We map form values to the model properties.
+            var settingsToUpdate = await _context.SystemSettings.FirstOrDefaultAsync();
+
+            if (settingsToUpdate == null)
+            {
+                // If settings don't exist, create a new record
+                settingsToUpdate = new SystemSetting();
+                _context.SystemSettings.Add(settingsToUpdate);
+            }
+
+            // Map values from the submitted form (model) to the database entity
+            settingsToUpdate.SystemName = model.SystemName;
+            settingsToUpdate.ContactEmail = model.ContactEmail;
+            settingsToUpdate.SupportPhone = model.SupportPhone;
+            settingsToUpdate.MaxTicketsPerBooking = model.MaxTicketsPerBooking;
+            settingsToUpdate.BookingCancellationHours = model.BookingCancellationHours;
+            settingsToUpdate.EnableQRCodeTickets = Request.Form.ContainsKey("EnableQRCodeTickets");
+            settingsToUpdate.AcceptCreditCards = Request.Form.ContainsKey("AcceptCreditCards");
+            settingsToUpdate.AcceptPayPal = Request.Form.ContainsKey("AcceptPayPal");
+            settingsToUpdate.Currency = model.Currency;
+            settingsToUpdate.EnableLoyaltyProgram = Request.Form.ContainsKey("EnableLoyaltyProgram");
+            settingsToUpdate.PointsPer100LKR = model.PointsPer100LKR;
+            settingsToUpdate.PointsExpiryDays = model.PointsExpiryDays;
+            settingsToUpdate.EmailOnBookingConfirmation = Request.Form.ContainsKey("EmailOnBookingConfirmation");
+            settingsToUpdate.EmailOnEventReminder = Request.Form.ContainsKey("EmailOnEventReminder");
+            settingsToUpdate.EmailForPromotions = Request.Form.ContainsKey("EmailForPromotions");
+            settingsToUpdate.RequireEmailVerification = Request.Form.ContainsKey("RequireEmailVerification");
+            settingsToUpdate.SessionTimeoutMinutes = model.SessionTimeoutMinutes;
+            settingsToUpdate.PasswordMinLength = model.PasswordMinLength;
+
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "System settings updated successfully!";
+            return RedirectToAction("Dashboard");
         }
 
         // ----------------------------------------------------------------------

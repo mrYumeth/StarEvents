@@ -1,14 +1,16 @@
-﻿@{
+﻿@model StarEvents.Models.SystemSetting
+@{
     ViewData["Title"] = "System Settings";
 }
 
 <style>
+    /* Add your existing CSS styles here */
     .settings-container {
         padding: 40px 0;
     }
 
     .page-header {
-        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
         color: white;
         padding: 30px 40px;
         border-radius: 15px;
@@ -28,63 +30,56 @@
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
         gap: 25px;
+        margin-bottom: 30px;
     }
 
     .settings-card {
         background: white;
-        border-radius: 15px;
-        padding: 30px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.07);
+        padding: 25px;
     }
 
     .card-title {
-        font-size: 1.3rem;
-        font-weight: 700;
-        color: #333;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #0056b3;
+        border-bottom: 2px solid #f0f0f0;
+        padding-bottom: 10px;
         margin-bottom: 20px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
     }
 
     .setting-item {
         margin-bottom: 20px;
-        padding-bottom: 20px;
-        border-bottom: 1px solid #f0f0f0;
     }
 
-        .setting-item:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
-
     .setting-label {
+        display: block;
         font-weight: 600;
         color: #555;
         margin-bottom: 8px;
-        display: block;
-        font-size: 0.95rem;
-    }
-
-    .setting-description {
-        font-size: 0.85rem;
-        color: #999;
-        margin-top: 5px;
+        font-size: 0.9rem;
     }
 
     .setting-input {
         width: 100%;
-        padding: 10px 15px;
+        padding: 10px 12px;
         border: 2px solid #e0e0e0;
         border-radius: 8px;
         font-size: 0.95rem;
+        box-sizing: border-box;
     }
 
         .setting-input:focus {
-            border-color: #dc3545;
+            border-color: #007bff;
             outline: none;
         }
+
+    .setting-description {
+        font-size: 0.8rem;
+        color: #999;
+        margin-top: 5px;
+    }
 
     .setting-toggle {
         display: flex;
@@ -94,8 +89,9 @@
 
     .toggle-switch {
         position: relative;
-        width: 60px;
-        height: 30px;
+        display: inline-block;
+        width: 50px;
+        height: 28px;
     }
 
         .toggle-switch input {
@@ -112,19 +108,19 @@
         right: 0;
         bottom: 0;
         background-color: #ccc;
-        transition: 0.4s;
-        border-radius: 30px;
+        transition: .4s;
+        border-radius: 28px;
     }
 
         .toggle-slider:before {
             position: absolute;
             content: "";
-            height: 22px;
-            width: 22px;
+            height: 20px;
+            width: 20px;
             left: 4px;
             bottom: 4px;
             background-color: white;
-            transition: 0.4s;
+            transition: .4s;
             border-radius: 50%;
         }
 
@@ -133,67 +129,47 @@
     }
 
         input:checked + .toggle-slider:before {
-            transform: translateX(30px);
-        }
-
-    .btn-save-settings {
-        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-        color: white;
-        border: none;
-        padding: 12px 30px;
-        border-radius: 25px;
-        font-weight: 600;
-        cursor: pointer;
-        width: 100%;
-        margin-top: 20px;
-        transition: all 0.3s ease;
-    }
-
-        .btn-save-settings:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(220, 53, 69, 0.4);
+            transform: translateX(22px);
         }
 
     .info-box {
-        background: #e3f2fd;
+        background: #e9f7ff;
+        border-left: 5px solid #007bff;
         padding: 20px;
-        border-radius: 10px;
-        border-left: 4px solid #2196f3;
-        margin-top: 20px;
+        border-radius: 8px;
+        margin-bottom: 30px;
     }
 
         .info-box h4 {
-            color: #1976d2;
-            font-size: 1.1rem;
-            margin-bottom: 10px;
+            margin-top: 0;
+            color: #0056b3;
         }
 
         .info-box ul {
-            margin: 0;
             padding-left: 20px;
+            margin-bottom: 0;
         }
 
-        .info-box li {
-            color: #555;
-            margin-bottom: 5px;
-        }
-
-    @@media (max-width: 768px) {
-        .settings-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .page-header {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 15px;
-        }
+    .btn-save-settings {
+        width: 100%;
+        padding: 15px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        background: #28a745;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.3s;
     }
+
+        .btn-save-settings:hover {
+            background: #218838;
+        }
 </style>
 
 <div class="settings-container">
     <div class="container">
-        <!-- Header -->
         <div class="page-header">
             <h1>⚙️ System Settings</h1>
             <a href="@Url.Action("Dashboard", "Admin")" class="btn btn-light">← Back to Dashboard</a>
@@ -201,218 +177,189 @@
 
         <form method="post" asp-action="UpdateSettings">
             @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
 
             <div class="settings-grid">
-                <!-- General Settings -->
                 <div class="settings-card">
                     <h3 class="card-title">🌐 General Settings</h3>
-
                     <div class="setting-item">
-                        <label class="setting-label">System Name</label>
-                        <input type="text" class="setting-input" name="systemName" value="StarEvents" />
+                        <label class="setting-label" asp-for="SystemName"></label>
+                        <input type="text" class="setting-input" asp-for="SystemName" />
                         <div class="setting-description">The name displayed across the application</div>
                     </div>
-
                     <div class="setting-item">
-                        <label class="setting-label">Contact Email</label>
-                        <input type="email" class="setting-input" name="contactEmail" value="support@starevents.com" />
+                        <label class="setting-label" asp-for="ContactEmail"></label>
+                        <input type="email" class="setting-input" asp-for="ContactEmail" />
                         <div class="setting-description">Primary contact email for support</div>
                     </div>
-
                     <div class="setting-item">
-                        <label class="setting-label">Support Phone</label>
-                        <input type="tel" class="setting-input" name="supportPhone" value="+94 11 234 5678" />
+                        <label class="setting-label" asp-for="SupportPhone"></label>
+                        <input type="tel" class="setting-input" asp-for="SupportPhone" />
                         <div class="setting-description">Customer support phone number</div>
                     </div>
                 </div>
 
-                <!-- Booking Settings -->
                 <div class="settings-card">
                     <h3 class="card-title">🎫 Booking Settings</h3>
-
                     <div class="setting-item">
-                        <label class="setting-label">Max Tickets Per Booking</label>
-                        <input type="number" class="setting-input" name="maxTickets" value="10" min="1" max="100" />
+                        <label class="setting-label" asp-for="MaxTicketsPerBooking"></label>
+                        <input type="number" class="setting-input" asp-for="MaxTicketsPerBooking" min="1" max="100" />
                         <div class="setting-description">Maximum tickets allowed per transaction</div>
                     </div>
-
                     <div class="setting-item">
-                        <label class="setting-label">Booking Cancellation Hours</label>
-                        <input type="number" class="setting-input" name="cancellationHours" value="48" min="1" />
+                        <label class="setting-label" asp-for="BookingCancellationHours"></label>
+                        <input type="number" class="setting-input" asp-for="BookingCancellationHours" min="1" />
                         <div class="setting-description">Hours before event to allow cancellations</div>
                     </div>
-
                     <div class="setting-item">
                         <div class="setting-toggle">
                             <div>
-                                <label class="setting-label">Enable QR Code Tickets</label>
+                                <label class="setting-label" asp-for="EnableQRCodeTickets"></label>
                                 <div class="setting-description">Generate QR codes for e-tickets</div>
                             </div>
                             <label class="toggle-switch">
-                                <input type="checkbox" name="enableQR" checked />
+                                <input type="checkbox" asp-for="EnableQRCodeTickets" />
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
                     </div>
                 </div>
 
-                <!-- Payment Settings -->
                 <div class="settings-card">
                     <h3 class="card-title">💳 Payment Settings</h3>
-
                     <div class="setting-item">
                         <div class="setting-toggle">
                             <div>
-                                <label class="setting-label">Accept Credit Cards</label>
+                                <label class="setting-label" asp-for="AcceptCreditCards"></label>
                                 <div class="setting-description">Allow credit card payments</div>
                             </div>
                             <label class="toggle-switch">
-                                <input type="checkbox" name="acceptCreditCards" checked />
+                                <input type="checkbox" asp-for="AcceptCreditCards" />
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
                     </div>
-
                     <div class="setting-item">
                         <div class="setting-toggle">
                             <div>
-                                <label class="setting-label">Accept PayPal</label>
+                                <label class="setting-label" asp-for="AcceptPayPal"></label>
                                 <div class="setting-description">Enable PayPal gateway</div>
                             </div>
                             <label class="toggle-switch">
-                                <input type="checkbox" name="acceptPayPal" checked />
+                                <input type="checkbox" asp-for="AcceptPayPal" />
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
                     </div>
-
                     <div class="setting-item">
-                        <label class="setting-label">Currency</label>
-                        <select class="setting-input" name="currency">
-                            <option value="LKR" selected>LKR - Sri Lankan Rupee</option>
-                            <option value="USD">USD - US Dollar</option>
-                            <option value="EUR">EUR - Euro</option>
-                        </select>
+                        <label class="setting-label" asp-for="Currency"></label>
+                        <select class="setting-input" asp-for="Currency" asp-items="@(new SelectList(new[] { "LKR", "USD", "EUR" }))"></select>
                         <div class="setting-description">Default currency for transactions</div>
                     </div>
                 </div>
 
-                <!-- Loyalty Program -->
                 <div class="settings-card">
                     <h3 class="card-title">⭐ Loyalty Program</h3>
-
                     <div class="setting-item">
                         <div class="setting-toggle">
                             <div>
-                                <label class="setting-label">Enable Loyalty Program</label>
+                                <label class="setting-label" asp-for="EnableLoyaltyProgram"></label>
                                 <div class="setting-description">Award points for bookings</div>
                             </div>
                             <label class="toggle-switch">
-                                <input type="checkbox" name="enableLoyalty" checked />
+                                <input type="checkbox" asp-for="EnableLoyaltyProgram" />
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
                     </div>
-
                     <div class="setting-item">
-                        <label class="setting-label">Points Per 100 LKR</label>
-                        <input type="number" class="setting-input" name="pointsRate" value="1" min="1" max="10" />
+                        <label class="setting-label" asp-for="PointsPer100LKR"></label>
+                        <input type="number" class="setting-input" asp-for="PointsPer100LKR" min="1" max="10" />
                         <div class="setting-description">Loyalty points earned per 100 LKR spent</div>
                     </div>
-
                     <div class="setting-item">
-                        <label class="setting-label">Points Expiry (Days)</label>
-                        <input type="number" class="setting-input" name="pointsExpiry" value="365" min="30" />
+                        <label class="setting-label" asp-for="PointsExpiryDays"></label>
+                        <input type="number" class="setting-input" asp-for="PointsExpiryDays" min="30" />
                         <div class="setting-description">Number of days before points expire</div>
                     </div>
                 </div>
 
-                <!-- Email Notifications -->
                 <div class="settings-card">
                     <h3 class="card-title">📧 Email Notifications</h3>
-
                     <div class="setting-item">
                         <div class="setting-toggle">
                             <div>
-                                <label class="setting-label">Booking Confirmation</label>
+                                <label class="setting-label" asp-for="EmailOnBookingConfirmation"></label>
                                 <div class="setting-description">Send email on successful booking</div>
                             </div>
                             <label class="toggle-switch">
-                                <input type="checkbox" name="emailBooking" checked />
+                                <input type="checkbox" asp-for="EmailOnBookingConfirmation" />
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
                     </div>
-
                     <div class="setting-item">
                         <div class="setting-toggle">
                             <div>
-                                <label class="setting-label">Event Reminders</label>
+                                <label class="setting-label" asp-for="EmailOnEventReminder"></label>
                                 <div class="setting-description">Remind customers 24h before event</div>
                             </div>
                             <label class="toggle-switch">
-                                <input type="checkbox" name="emailReminder" checked />
+                                <input type="checkbox" asp-for="EmailOnEventReminder" />
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
                     </div>
-
                     <div class="setting-item">
                         <div class="setting-toggle">
                             <div>
-                                <label class="setting-label">Promotional Emails</label>
+                                <label class="setting-label" asp-for="EmailForPromotions"></label>
                                 <div class="setting-description">Send marketing emails to customers</div>
                             </div>
                             <label class="toggle-switch">
-                                <input type="checkbox" name="emailPromo" />
+                                <input type="checkbox" asp-for="EmailForPromotions" />
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
                     </div>
                 </div>
 
-                <!-- Security Settings -->
                 <div class="settings-card">
                     <h3 class="card-title">🔒 Security Settings</h3>
-
                     <div class="setting-item">
                         <div class="setting-toggle">
                             <div>
-                                <label class="setting-label">Require Email Verification</label>
+                                <label class="setting-label" asp-for="RequireEmailVerification"></label>
                                 <div class="setting-description">Users must verify email to book</div>
                             </div>
                             <label class="toggle-switch">
-                                <input type="checkbox" name="requireEmailVerification" checked />
+                                <input type="checkbox" asp-for="RequireEmailVerification" />
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
                     </div>
-
                     <div class="setting-item">
-                        <label class="setting-label">Session Timeout (minutes)</label>
-                        <input type="number" class="setting-input" name="sessionTimeout" value="30" min="5" max="120" />
+                        <label class="setting-label" asp-for="SessionTimeoutMinutes"></label>
+                        <input type="number" class="setting-input" asp-for="SessionTimeoutMinutes" min="5" max="120" />
                         <div class="setting-description">Idle time before automatic logout</div>
                     </div>
-
                     <div class="setting-item">
-                        <label class="setting-label">Password Min Length</label>
-                        <input type="number" class="setting-input" name="passwordLength" value="6" min="6" max="20" />
+                        <label class="setting-label" asp-for="PasswordMinLength"></label>
+                        <input type="number" class="setting-input" asp-for="PasswordMinLength" min="6" max="20" />
                         <div class="setting-description">Minimum password length requirement</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Information Box -->
             <div class="info-box">
                 <h4>ℹ️ Important Notes</h4>
                 <ul>
-                    <li>Changes to system settings will take effect immediately</li>
-                    <li>Some settings may require application restart</li>
-                    <li>Always backup your database before making major changes</li>
+                    <li>Changes to system settings will take effect immediately.</li>
+                    <li>Some settings may require an application restart to be fully applied everywhere.</li>
+                    <li>Always backup your database before making major changes.</li>
                 </ul>
             </div>
 
-            <!-- Save Button -->
             <div class="settings-card">
                 <button type="submit" class="btn-save-settings">
                     💾 Save All Settings
@@ -423,11 +370,7 @@
 </div>
 
 @section Scripts {
-    <script>
-        // Form submission handler
-        document.querySelector('form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            alert('Settings saved successfully! (This is a demo - implement actual save logic in controller)');
-        });
-    </script>
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 }

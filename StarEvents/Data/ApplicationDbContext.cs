@@ -19,6 +19,8 @@ namespace StarEvents.Data
         public DbSet<Booking> Bookings { get; set; }
         public DbSet<CustomerPayment> Payments { get; set; }
 
+        public DbSet<SystemSetting> SystemSettings { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
