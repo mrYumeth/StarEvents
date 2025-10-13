@@ -409,7 +409,7 @@
                     heightLeft -= pdfHeight;
                 }
 
-                // FIX: Use the JavaScript variable to build the filename
+
                 pdf.save(`StarEvents_Report_${reportDate}.pdf`);
 
                 // Show buttons again
@@ -421,7 +421,7 @@
             const table = document.getElementById('topEventsTable');
             if (table) {
                 const wb = XLSX.utils.table_to_book(table, { sheet: "Top Events" });
-                // FIX: Use the JavaScript variable to build the filename
+
                 XLSX.writeFile(wb, `StarEvents_Top_Events_${reportDate}.xlsx`);
             } else {
                 alert('Top events table not found.');

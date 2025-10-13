@@ -110,8 +110,6 @@ namespace StarEvents.Data
 
             if (!context.Events.Any())
             {
-                // The venue is no longer fetched from a separate table.
-                // We now define it directly in the new Event objects.
                 context.Events.AddRange(
                     new Event
                     {

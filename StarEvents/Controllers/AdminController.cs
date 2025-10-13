@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Text.Json;
 
 namespace StarEvents.Controllers
 {
@@ -34,16 +35,116 @@ namespace StarEvents.Controllers
         // ----------------------------------------------------------------------
         public async Task<IActionResult> Dashboard()
         {
+            // --- 1. Statistics Cards ---
+            var today = DateTime.Now;
+            var startOfCurrentMonth = new DateTime(today.Year, today.Month, 1);
+            var startOfPreviousMonth = startOfCurrentMonth.AddMonths(-1);
+            var endOfPreviousMonth = startOfCurrentMonth.AddDays(-1);
+
             ViewBag.TotalUsers = await _userManager.Users.CountAsync();
-            ViewBag.NewUsersThisMonth = await _userManager.Users.CountAsync(u => u.EmailConfirmed); // Placeholder
+            ViewBag.NewUsersThisMonth = await _userManager.Users.CountAsync(u => u.CreatedAt >= startOfCurrentMonth);
             ViewBag.TotalEvents = await _context.Events.CountAsync();
             ViewBag.ActiveEvents = await _context.Events.CountAsync(e => e.IsActive && e.Status == "Active");
             ViewBag.TotalBookings = await _context.Bookings.CountAsync();
-            ViewBag.BookingsThisMonth = await _context.Bookings.CountAsync(b => b.BookingDate.Month == DateTime.Now.Month);
-            var totalRevenue = await _context.Bookings.Where(b => b.Status == "Confirmed" || b.Status == "Completed").SumAsync(b => b.TotalAmount);
+            ViewBag.BookingsThisMonth = await _context.Bookings.CountAsync(b => b.BookingDate >= startOfCurrentMonth);
+
+            var confirmedBookings = _context.Bookings.Where(b => b.Status == "Confirmed" || b.Status == "Completed");
+            var totalRevenue = await confirmedBookings.SumAsync(b => b.TotalAmount);
             ViewBag.TotalRevenue = totalRevenue.ToString("N0");
-            ViewBag.RevenueGrowth = "15"; // Placeholder
+
+            // --- NEW: DYNAMIC REVENUE GROWTH CALCULATION ---
+            var currentMonthRevenue = await confirmedBookings
+                .Where(b => b.BookingDate >= startOfCurrentMonth)
+                .SumAsync(b => b.TotalAmount);
+
+            var previousMonthRevenue = await confirmedBookings
+                .Where(b => b.BookingDate >= startOfPreviousMonth && b.BookingDate <= endOfPreviousMonth)
+                .SumAsync(b => b.TotalAmount);
+
+            if (previousMonthRevenue > 0)
+            {
+                var growthPercentage = ((currentMonthRevenue - previousMonthRevenue) / previousMonthRevenue) * 100;
+                ViewBag.RevenueGrowth = growthPercentage.ToString("F1"); // Format to one decimal place
+            }
+            else if (currentMonthRevenue > 0)
+            {
+                ViewBag.RevenueGrowth = "100.0"; // Growth is effectively 100% if starting from zero
+            }
+            else
+            {
+                ViewBag.RevenueGrowth = "0.0"; // No revenue in either month
+            }
+
+            // --- 2. System Alerts (Now Dynamic) ---
             ViewBag.PendingApprovals = await _context.Events.CountAsync(e => e.Status == "Draft");
+            ViewBag.LowStockEventsCount = await _context.Events.CountAsync(e => e.IsActive && e.AvailableTickets > 0 && e.AvailableTickets < 10);
+            // For backup, this is a placeholder. A real implementation would check a log file or a database record.
+            ViewBag.LastBackupDays = 2;
+
+            // --- 3. Recent Activity Feed (Now Dynamic) ---
+            var recentUsers = await _context.Users
+                .OrderByDescending(u => u.CreatedAt)
+                .Take(5)
+                .Select(u => new DashboardActivityViewModel
+                {
+                    Description = $"New user registered: {u.Email}",
+                    Timestamp = u.CreatedAt,
+                    ActivityType = "User"
+                }).ToListAsync();
+
+            var recentBookings = await _context.Bookings
+                .Include(b => b.Event)
+                .OrderByDescending(b => b.BookingDate)
+                .Take(5)
+                .Select(b => new DashboardActivityViewModel
+                {
+                    Description = $"New booking for '{b.Event.Title}'",
+                    Timestamp = b.BookingDate,
+                    ActivityType = "Booking"
+                }).ToListAsync();
+
+            var recentEvents = await _context.Events
+                .OrderByDescending(e => e.CreatedAt)
+                .Take(5)
+                .Select(e => new DashboardActivityViewModel
+                {
+                    Description = $"Event '{e.Title}' was created",
+                    Timestamp = e.CreatedAt,
+                    ActivityType = "Event"
+                }).ToListAsync();
+
+            var allActivities = recentUsers.Concat(recentBookings).Concat(recentEvents)
+                                           .OrderByDescending(a => a.Timestamp)
+                                           .Take(5)
+                                           .ToList();
+
+            ViewBag.RecentActivities = allActivities;
+
+
+            // --- 4. Revenue Chart Data (Now Dynamic) ---
+            var monthlyRevenueData = await _context.Bookings
+                .Where(b => b.BookingDate.Year == DateTime.Now.Year && (b.Status == "Confirmed" || b.Status == "Completed"))
+                .GroupBy(b => b.BookingDate.Month)
+                .Select(g => new {
+                    Month = g.Key,
+                    Revenue = g.Sum(b => b.TotalAmount)
+                })
+                .ToDictionaryAsync(x => x.Month, x => x.Revenue);
+
+            var chartLabels = new List<string>();
+            var chartData = new List<decimal>();
+
+            for (int i = 1; i <= 12; i++)
+            {
+                chartLabels.Add(new DateTime(DateTime.Now.Year, i, 1).ToString("MMM"));
+                chartData.Add(monthlyRevenueData.ContainsKey(i) ? monthlyRevenueData[i] : 0);
+            }
+
+            // We serialize the data to JSON so JavaScript can read it easily.
+            ViewBag.ChartLabels = JsonSerializer.Serialize(chartLabels);
+            ViewBag.ChartData = JsonSerializer.Serialize(chartData);
+
+
             return View();
         }
 

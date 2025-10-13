@@ -1,18 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Text;
-using System.Text.Encodings.Web;
-using System.Threading;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
-using StarEvents.Data;
 using StarEvents.Models;
 
 namespace StarEvents.Areas.Identity.Pages.Account
@@ -23,25 +19,20 @@ namespace StarEvents.Areas.Identity.Pages.Account
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IUserStore<ApplicationUser> _userStore;
-        private readonly IUserEmailStore<ApplicationUser> _emailStore;
         private readonly ILogger<RegisterModel> _logger;
-        private readonly IEmailSender _emailSender;
 
         public RegisterModel(
             UserManager<ApplicationUser> userManager,
             IUserStore<ApplicationUser> userStore,
             SignInManager<ApplicationUser> signInManager,
             RoleManager<IdentityRole> roleManager,
-            ILogger<RegisterModel> logger,
-            IEmailSender emailSender)
+            ILogger<RegisterModel> logger)
         {
             _userManager = userManager;
             _userStore = userStore;
-            _emailStore = GetEmailStore();
             _signInManager = signInManager;
             _roleManager = roleManager;
             _logger = logger;
-            _emailSender = emailSender;
         }
 
         [BindProperty]
@@ -109,17 +100,27 @@ namespace StarEvents.Areas.Identity.Pages.Account
                 {
                     _logger.LogInformation("User created a new account with password.");
 
-                    // Ensure role exists
                     if (!await _roleManager.RoleExistsAsync(Input.Role))
                     {
                         await _roleManager.CreateAsync(new IdentityRole(Input.Role));
                     }
 
-                    // Assign role
                     await _userManager.AddToRoleAsync(user, Input.Role);
-
                     await _signInManager.SignInAsync(user, isPersistent: false);
-                    return LocalRedirect(returnUrl);
+
+                    // =================== AMENDED REDIRECTION LOGIC ===================
+                    switch (Input.Role)
+                    {
+                        case "Customer":
+                            // Correct: Redirects to Views/Customer/Dashboard.cshtml
+                            return RedirectToAction("Dashboard", "Customer");
+                        case "Organizer":
+                            // Correct: Redirects to Views/Organizers/Index.cshtml
+                            return RedirectToAction("Index", "Organizers");
+                        default:
+                            return LocalRedirect(returnUrl);
+                    }
+                    // ===============================================================
                 }
 
                 foreach (var error in result.Errors)
@@ -129,15 +130,6 @@ namespace StarEvents.Areas.Identity.Pages.Account
             }
 
             return Page();
-        }
-
-        private IUserEmailStore<ApplicationUser> GetEmailStore()
-        {
-            if (!_userManager.SupportsUserEmail)
-            {
-                throw new NotSupportedException("The default UI requires a user store with email support.");
-            }
-            return (IUserEmailStore<ApplicationUser>)_userStore;
         }
     }
 }
