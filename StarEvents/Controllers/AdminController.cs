@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using StarEvents.Data;
 using StarEvents.Models;
@@ -74,8 +75,96 @@ namespace StarEvents.Controllers
                     Roles = roles
                 });
             }
-            ViewBag.UsersWithRoles = usersWithRoles;
-            return View(users);
+            return View(usersWithRoles);
+        }
+
+        // ----------------------------------------------------------------------
+        // GET User Details (for Modal) - NEW
+        // ----------------------------------------------------------------------
+        [HttpGet]
+        public async Task<IActionResult> GetUserDetails(string id)
+        {
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            var userRoles = await _userManager.GetRolesAsync(user);
+            ViewBag.AllRoles = new SelectList(_roleManager.Roles, "Name", "Name", userRoles.FirstOrDefault());
+
+            return PartialView("_UserDetailsPartial", user);
+        }
+
+        // ----------------------------------------------------------------------
+        // POST Update User Details - NEW
+        // ----------------------------------------------------------------------
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateUser(ApplicationUser model)
+        {
+            var user = await _userManager.FindByIdAsync(model.Id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            user.FirstName = model.FirstName;
+            user.LastName = model.LastName;
+            user.Email = model.Email;
+            user.PhoneNumber = model.PhoneNumber;
+            user.EmailConfirmed = model.EmailConfirmed; // This allows activating/deactivating
+            user.LoyaltyPoints = model.LoyaltyPoints;
+
+            var result = await _userManager.UpdateAsync(user);
+
+            if (result.Succeeded)
+            {
+                TempData["SuccessMessage"] = "User details updated successfully!";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Failed to update user details.";
+            }
+
+            return RedirectToAction(nameof(ManageUsers));
+        }
+
+        // ----------------------------------------------------------------------
+        // POST Change User Role - NEW
+        // ----------------------------------------------------------------------
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangeUserRole(string userId, string newRole)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null || string.IsNullOrEmpty(newRole))
+            {
+                TempData["ErrorMessage"] = "User not found or role not specified.";
+                return RedirectToAction(nameof(ManageUsers));
+            }
+
+            var currentRoles = await _userManager.GetRolesAsync(user);
+            var removeResult = await _userManager.RemoveFromRolesAsync(user, currentRoles);
+
+            if (!removeResult.Succeeded)
+            {
+                TempData["ErrorMessage"] = "Failed to remove user from current roles.";
+                return RedirectToAction(nameof(ManageUsers));
+            }
+
+            var addResult = await _userManager.AddToRoleAsync(user, newRole);
+
+            if (addResult.Succeeded)
+            {
+                TempData["SuccessMessage"] = "User role updated successfully!";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Failed to add user to the new role.";
+            }
+
+            return RedirectToAction(nameof(ManageUsers));
         }
 
         // ----------------------------------------------------------------------
@@ -100,7 +189,6 @@ namespace StarEvents.Controllers
             return View(events);
         }
 
-
         // ----------------------------------------------------------------------
         // Approve/Reject Event
         // ----------------------------------------------------------------------
@@ -108,34 +196,27 @@ namespace StarEvents.Controllers
         public async Task<IActionResult> ApproveEvent(int id)
         {
             var eventToApprove = await _context.Events.FindAsync(id);
-            if (eventToApprove == null)
-            {
-                return NotFound();
-            }
+            if (eventToApprove == null) return NotFound();
 
             eventToApprove.Status = "Active";
             eventToApprove.IsActive = true;
             eventToApprove.UpdatedAt = DateTime.UtcNow;
-
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] = "Event approved successfully!";
             return RedirectToAction(nameof(ManageEvents));
         }
 
+
         [HttpPost]
         public async Task<IActionResult> RejectEvent(int id, string reason)
         {
             var eventToReject = await _context.Events.FindAsync(id);
-            if (eventToReject == null)
-            {
-                return NotFound();
-            }
+            if (eventToReject == null) return NotFound();
 
             eventToReject.Status = "Cancelled";
             eventToReject.IsActive = false;
             eventToReject.UpdatedAt = DateTime.UtcNow;
-
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] = "Event rejected.";
@@ -149,10 +230,7 @@ namespace StarEvents.Controllers
         public async Task<IActionResult> DeleteEvent(int id)
         {
             var eventToDelete = await _context.Events.FindAsync(id);
-            if (eventToDelete == null)
-            {
-                return NotFound();
-            }
+            if (eventToDelete == null) return NotFound();
 
             _context.Events.Remove(eventToDelete);
             await _context.SaveChangesAsync();
@@ -166,9 +244,10 @@ namespace StarEvents.Controllers
         // ----------------------------------------------------------------------
         public async Task<IActionResult> ManageVenues()
         {
-            var venues = await _context.Venues.ToListAsync();
-            return View(venues);
+            return View(await _context.Venues.ToListAsync());
         }
+
+
 
         // ----------------------------------------------------------------------
         // Create Venue (GET)
@@ -187,13 +266,11 @@ namespace StarEvents.Controllers
         {
             if (ModelState.IsValid)
             {
-                _context.Venues.Add(venue);
+                _context.Add(venue);
                 await _context.SaveChangesAsync();
-
                 TempData["SuccessMessage"] = "Venue created successfully!";
                 return RedirectToAction(nameof(ManageVenues));
             }
-
             return View(venue);
         }
 
@@ -203,11 +280,7 @@ namespace StarEvents.Controllers
         public async Task<IActionResult> EditVenue(int id)
         {
             var venue = await _context.Venues.FindAsync(id);
-            if (venue == null)
-            {
-                return NotFound();
-            }
-
+            if (venue == null) return NotFound();
             return View(venue);
         }
 
@@ -218,10 +291,7 @@ namespace StarEvents.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditVenue(int id, Venue venue)
         {
-            if (id != venue.Id)
-            {
-                return NotFound();
-            }
+            if (id != venue.Id) return NotFound();
 
             if (ModelState.IsValid)
             {
@@ -229,20 +299,15 @@ namespace StarEvents.Controllers
                 {
                     _context.Update(venue);
                     await _context.SaveChangesAsync();
-
                     TempData["SuccessMessage"] = "Venue updated successfully!";
-                    return RedirectToAction(nameof(ManageVenues));
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!VenueExists(venue.Id))
-                    {
-                        return NotFound();
-                    }
-                    throw;
+                    if (!VenueExists(venue.Id)) return NotFound();
+                    else throw;
                 }
+                return RedirectToAction(nameof(ManageVenues));
             }
-
             return View(venue);
         }
 
@@ -253,14 +318,10 @@ namespace StarEvents.Controllers
         public async Task<IActionResult> DeleteVenue(int id)
         {
             var venue = await _context.Venues.FindAsync(id);
-            if (venue == null)
-            {
-                return NotFound();
-            }
+            if (venue == null) return NotFound();
 
             _context.Venues.Remove(venue);
             await _context.SaveChangesAsync();
-
             TempData["SuccessMessage"] = "Venue deleted successfully!";
             return RedirectToAction(nameof(ManageVenues));
         }
@@ -273,10 +334,8 @@ namespace StarEvents.Controllers
             var bookings = await _context.Bookings
                 .Include(b => b.Customer)
                 .Include(b => b.Event)
-                // FIX: Removed .ThenInclude(e => e.Venue)
                 .OrderByDescending(b => b.BookingDate)
                 .ToListAsync();
-
             return View(bookings);
         }
 

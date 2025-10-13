@@ -84,7 +84,6 @@ namespace StarEvents.Areas.Identity.Pages.Account
                     {
                         if (await _userManager.IsInRoleAsync(user, "Admin"))
                         {
-                            // FIX: This now correctly points to the "Dashboard" action in the "Admin" controller.
                             return RedirectToAction("Dashboard", "Admin");
                         }
                         else if (await _userManager.IsInRoleAsync(user, "Organizer"))
@@ -93,6 +92,7 @@ namespace StarEvents.Areas.Identity.Pages.Account
                         }
                         else if (await _userManager.IsInRoleAsync(user, "Customer"))
                         {
+                            // This is the corrected line that will be used after the rebuild.
                             return RedirectToAction("Dashboard", "Customer");
                         }
                     }

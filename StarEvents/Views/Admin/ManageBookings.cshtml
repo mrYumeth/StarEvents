@@ -1,0 +1,429 @@
+﻿@model IEnumerable<StarEvents.Models.Booking>
+@{
+    ViewData["Title"] = "Manage Bookings";
+}
+
+<style>
+    .manage-bookings-container {
+        padding: 40px 0;
+    }
+
+    .page-header {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        padding: 30px 40px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+        .page-header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+    .stats-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .stat-box {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        text-align: center;
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #dc3545;
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+        color: #666;
+        margin-top: 5px;
+    }
+
+    .filter-section {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        margin-bottom: 30px;
+    }
+
+    .filter-controls {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .filter-label {
+        font-weight: 600;
+        color: #555;
+        margin-bottom: 5px;
+        font-size: 0.9rem;
+    }
+
+    .filter-input {
+        padding: 8px 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 0.95rem;
+    }
+
+        .filter-input:focus {
+            border-color: #dc3545;
+            outline: none;
+        }
+
+    .btn-filter {
+        padding: 10px 25px;
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: auto;
+    }
+
+        .btn-filter:hover {
+            background: #c82333;
+        }
+
+    .bookings-table-container {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        overflow-x: auto;
+    }
+
+    .bookings-table {
+        width: 100%;
+        min-width: 1000px;
+        border-collapse: collapse;
+    }
+
+        .bookings-table thead th {
+            background: #f8f9fa;
+            padding: 15px;
+            text-align: left;
+            font-weight: 700;
+            border-bottom: 2px solid #dee2e6;
+            white-space: nowrap;
+        }
+
+        .bookings-table tbody td {
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: middle;
+        }
+
+        .bookings-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+    .booking-id {
+        font-weight: 700;
+        color: #dc3545;
+    }
+
+    .customer-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .customer-name {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .customer-email {
+        font-size: 0.85rem;
+        color: #999;
+    }
+
+    .event-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .event-name {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 3px;
+    }
+
+    .event-date {
+        font-size: 0.85rem;
+        color: #666;
+    }
+
+    .status-badge {
+        padding: 5px 12px;
+        border-radius: 15px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        display: inline-block;
+        white-space: nowrap;
+    }
+
+    .status-confirmed {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .status-pending {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .status-cancelled {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .status-completed {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+
+    .amount {
+        font-weight: 700;
+        color: #28a745;
+        white-space: nowrap;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 5px;
+    }
+
+    .btn-action {
+        padding: 6px 12px;
+        border-radius: 5px;
+        font-size: 0.85rem;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        color: white;
+    }
+
+    .btn-view {
+        background: #007bff;
+    }
+
+        .btn-view:hover {
+            background: #0056b3;
+        }
+
+    .btn-cancel {
+        background: #dc3545;
+    }
+
+        .btn-cancel:hover {
+            background: #c82333;
+        }
+
+    .no-bookings {
+        text-align: center;
+        padding: 60px 20px;
+        color: #999;
+    }
+
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 30px;
+    }
+
+    @@media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+    }
+</style>
+
+<div class="manage-bookings-container">
+    <div class="container">
+        <!-- Header -->
+        <div class="page-header">
+            <h1>📋 Manage Bookings</h1>
+            <a href="@Url.Action("Dashboard", "Admin")" class="btn btn-light">← Back to Dashboard</a>
+        </div>
+
+        <!-- Statistics Summary -->
+        <div class="stats-summary">
+            <div class="stat-box">
+                <div class="stat-value">@Model.Count()</div>
+                <div class="stat-label">Total Bookings</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">@Model.Count(b => b.Status == "Confirmed")</div>
+                <div class="stat-label">Confirmed</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">@Model.Count(b => b.Status == "Pending")</div>
+                <div class="stat-label">Pending</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">@Model.Count(b => b.Status == "Cancelled")</div>
+                <div class="stat-label">Cancelled</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">LKR @Model.Where(b => b.Status == "Confirmed" || b.Status == "Completed").Sum(b => b.TotalAmount).ToString("N0")</div>
+                <div class="stat-label">Total Revenue</div>
+            </div>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="filter-section">
+            <form method="get" asp-action="ManageBookings">
+                <div class="filter-controls">
+                    <div class="filter-group">
+                        <label class="filter-label">Status</label>
+                        <select name="status" class="filter-input">
+                            <option value="">All Status</option>
+                            <option value="Confirmed">Confirmed</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Cancelled">Cancelled</option>
+                            <option value="Completed">Completed</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">Customer Email</label>
+                        <input type="text" name="customerEmail" class="filter-input" placeholder="Search by email" />
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">From Date</label>
+                        <input type="date" name="fromDate" class="filter-input" />
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">To Date</label>
+                        <input type="date" name="toDate" class="filter-input" />
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">&nbsp;</label>
+                        <button type="submit" class="btn-filter">🔍 Filter</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Bookings Table -->
+        <div class="bookings-table-container">
+            @if (Model != null && Model.Any())
+            {
+                <table class="bookings-table">
+                    <thead>
+                        <tr>
+                            <th>Booking ID</th>
+                            <th>Customer</th>
+                            <th>Event</th>
+                            <th>Venue</th>
+                            <th>Booking Date</th>
+                            <th>Tickets</th>
+                            <th>Amount</th>
+                            <th>Payment</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var booking in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <span class="booking-id">#@booking.Id.ToString("D6")</span>
+                                </td>
+                                <td>
+                                    <div class="customer-info">
+                                        <span class="customer-name">@booking.Customer.FirstName @booking.Customer.LastName</span>
+                                        <span class="customer-email">@booking.Customer.Email</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="event-info">
+                                        <span class="event-name">@booking.Event.Title</span>
+                                        <span class="event-date">@booking.Event.StartDate.ToString("MMM dd, yyyy")</span>
+                                    </div>
+                                </td>
+                                <td>@booking.Event.VenueName</td>
+                                <td>@booking.BookingDate.ToString("MMM dd, yyyy")</td>
+                                <td><strong>@booking.TicketQuantity</strong></td>
+                                <td>
+                                    <span class="amount">LKR @booking.TotalAmount.ToString("N2")</span>
+                                </td>
+                                <td>
+                                    <small>@booking.Payment.PaymentMethod</small>
+                                    <br>
+                                    <small style="color: #999;">@booking.Payment.TransactionId</small>
+                                </td>
+                                <td>
+                                    <span class="status-badge status-@booking.Status.ToLower()">
+                                        @booking.Status
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <a href="@Url.Action("ViewTicket", "Bookings", new { id = booking.Id })"
+                                           class="btn-action btn-view" title="View Details">
+                                            👁️ View
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="no-bookings">
+                    <h3>No Bookings Found</h3>
+                    <p>No bookings match the selected filters.</p>
+                </div>
+            }
+        </div>
+
+        @if (Model != null && Model.Count() > 20)
+        {
+            <div class="pagination-container">
+                <!-- Add pagination controls here if needed -->
+                <p style="color: #999;">Showing @Model.Count() bookings</p>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Auto-submit form on filter change (optional)
+        document.querySelectorAll('.filter-input').forEach(input => {
+            if (input.tagName === 'SELECT') {
+                input.addEventListener('change', function() {
+                    // this.form.submit(); // Uncomment for auto-submit
+                });
+            }
+        });
+    </script>
+}
+
