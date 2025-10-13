@@ -28,7 +28,7 @@ namespace StarEvents.Controllers
         public int PointsToEarn { get; set; }
     }
 
-    [Authorize(Roles = "Customer")]
+    [Authorize(Roles = "Customer,Admin")]
     public class BookingsController : Controller
     {
         private readonly ApplicationDbContext _context;
