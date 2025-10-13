@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using StarEvents.Data;
 using StarEvents.ViewModels;
@@ -8,8 +9,6 @@ using System.Threading.Tasks;
 
 namespace StarEvents.Controllers
 {
-    // The EventsController handles public-facing event browsing, searching, and viewing details.
-    // Users can browse events without logging in.
     public class EventsController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -19,35 +18,47 @@ namespace StarEvents.Controllers
             _context = context;
         }
 
-        // 1. Index - Display all active events with search/filter functionality
         public async Task<IActionResult> Index(string? category, string? location, DateTime? dateFrom, string? keyword)
         {
-            // Start with all active events
+            // --- FIX: Fetch data for dropdowns ---
+            var categories = await _context.Events
+                .Where(e => e.IsActive && e.Status == "Active" && !string.IsNullOrEmpty(e.Category))
+                .Select(e => e.Category)
+                .Distinct()
+                .ToListAsync();
+
+            var locations = await _context.Events
+                .Where(e => e.IsActive && e.Status == "Active" && !string.IsNullOrEmpty(e.Location))
+                .Select(e => e.Location)
+                .Distinct()
+                .ToListAsync();
+
+            ViewBag.Categories = new SelectList(categories);
+            ViewBag.Locations = new SelectList(locations);
+            // --- END FIX ---
+
             var query = _context.Events
                 .Where(e => e.IsActive && e.Status == "Active")
                 .AsQueryable();
 
-            // Apply filters based on query parameters
-
-            // Filter by Category
             if (!string.IsNullOrEmpty(category))
             {
                 query = query.Where(e => e.Category == category);
             }
 
-            // FIX: Filter by the new 'Location' string property
             if (!string.IsNullOrEmpty(location))
             {
-                query = query.Where(e => e.Location.Contains(location));
+                query = query.Where(e => e.Location == location);
             }
 
-            // Filter by Date
+            // --- FIX: Correct date filtering logic ---
             if (dateFrom.HasValue)
             {
+                // Compare the date part only, ignoring the time
                 query = query.Where(e => e.StartDate.Date >= dateFrom.Value.Date);
             }
+            // --- END FIX ---
 
-            // Filter by Keyword
             if (!string.IsNullOrEmpty(keyword))
             {
                 query = query.Where(e =>
@@ -55,7 +66,6 @@ namespace StarEvents.Controllers
                     e.Description.Contains(keyword));
             }
 
-            // Execute query and map to ViewModel
             var events = await query
                 .OrderBy(e => e.StartDate)
                 .Select(e => new EventViewModel
@@ -64,7 +74,6 @@ namespace StarEvents.Controllers
                     Title = e.Title,
                     Category = e.Category,
                     DateRange = e.StartDate.ToString("MMM d, yyyy"),
-                    // FIX: Use the new 'Location' property
                     LocationName = e.Location,
                     PriceDisplay = $"LKR {e.TicketPrice:N2}",
                     ImageUrl = e.ImageUrl
@@ -79,28 +88,18 @@ namespace StarEvents.Controllers
             return View(events);
         }
 
-        // 2. Details - Display detailed information about a specific event
         public async Task<IActionResult> Details(int id)
         {
-            // FIX: Removed the invalid .Include(e => e.Venue)
             var eventEntity = await _context.Events
                 .Include(e => e.Organizer)
-                .Where(e => e.Id == id)
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(e => e.Id == id);
 
-            if (eventEntity == null)
+            if (eventEntity == null || !eventEntity.IsActive)
             {
-                TempData["ErrorMessage"] = "Event not found.";
+                TempData["ErrorMessage"] = "Event not found or is no longer available.";
                 return RedirectToAction(nameof(Index));
             }
 
-            if (!eventEntity.IsActive)
-            {
-                TempData["ErrorMessage"] = "This event is no longer available.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            // Map to ViewModel
             var viewModel = new EventDetailsViewModel
             {
                 Id = eventEntity.Id,
@@ -108,43 +107,21 @@ namespace StarEvents.Controllers
                 Description = eventEntity.Description,
                 Category = eventEntity.Category,
                 StartDate = eventEntity.StartDate,
+                EndDate = eventEntity.EndDate,
                 ImageUrl = eventEntity.ImageUrl,
-
                 DateDisplay = eventEntity.StartDate.ToString("ddd, MMM d, yyyy h:mm tt") +
                               (eventEntity.EndDate.HasValue
                                   ? $" - {eventEntity.EndDate.Value.ToString("h:mm tt")}"
                                   : ""),
-
-                // FIX: Use the new string properties for Venue and Location
                 VenueName = eventEntity.VenueName,
                 VenueAddress = $"{eventEntity.VenueName}, {eventEntity.Location}",
                 VenueCity = eventEntity.Location,
-
                 OrganizerName = $"{eventEntity.Organizer.FirstName} {eventEntity.Organizer.LastName}",
-
                 AvailableTickets = eventEntity.AvailableTickets ?? 0,
                 TicketPrice = $"LKR {eventEntity.TicketPrice:N2}"
             };
 
             return View(viewModel);
-        }
-
-        // Legacy search methods - no changes needed here
-        public IActionResult Search()
-        {
-            return RedirectToAction(nameof(Index));
-        }
-
-        [HttpPost]
-        public IActionResult Search(SearchCriteriaModel criteria)
-        {
-            return RedirectToAction(nameof(Index), new
-            {
-                category = criteria.Category,
-                location = criteria.Location,
-                dateFrom = criteria.Date,
-                keyword = ""
-            });
         }
     }
 }
