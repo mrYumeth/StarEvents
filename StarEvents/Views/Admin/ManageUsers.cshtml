@@ -324,6 +324,11 @@
                                                 onclick="showChangeRoleModal('@user.Id', '@(user.FirstName + " " + user.LastName)', '@primaryRole')">
                                             🔄
                                         </button>
+
+                                        <button type="button" class="btn-action btn-delete" title="Delete User"
+                                                onclick="showDeleteUserModal('@user.Id', '@(user.FirstName + " " + user.LastName)')">
+                                            🗑️
+                                        </button>
                                     }
                                 </div>
                             </td>
@@ -382,6 +387,30 @@
     </div>
 </div>
 
+<!--Delete User Model-->
+<div class="modal fade" id="deleteUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="DeleteUser" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title text-danger">Confirm Deletion</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="userId" id="deleteUserId" />
+                    <p>Are you sure you want to permanently delete the user <strong id="deleteUserName"></strong>?</p>
+                    <div class="alert alert-danger"><strong>Warning:</strong> This action cannot be undone.</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Delete User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
         // Search/Filter functionality
@@ -428,6 +457,13 @@
             document.getElementById('roleChangeUserName').textContent = userName;
             document.getElementById('newRole').value = currentRole;
             var modal = new bootstrap.Modal(document.getElementById('changeRoleModal'));
+            modal.show();
+        }
+        // Show Delete Model
+        function showDeleteUserModal(userId, userName) {
+            document.getElementById('deleteUserId').value = userId;
+            document.getElementById('deleteUserName').textContent = userName;
+            var modal = new bootstrap.Modal(document.getElementById('deleteUserModal'));
             modal.show();
         }
     </script>

@@ -189,6 +189,7 @@ namespace StarEvents.Controllers
             user.FirstName = model.FirstName;
             user.LastName = model.LastName;
             user.Email = model.Email;
+            user.UserName = model.Email; // <-- ADD THIS LINE to keep them in sync
             user.PhoneNumber = model.PhoneNumber;
             user.EmailConfirmed = model.EmailConfirmed;
             user.LoyaltyPoints = model.LoyaltyPoints;
@@ -203,6 +204,77 @@ namespace StarEvents.Controllers
             {
                 TempData["ErrorMessage"] = "Failed to update user details.";
             }
+            return RedirectToAction(nameof(ManageUsers));
+        }
+
+        // POST: /Admin/DeleteUser
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteUser(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                TempData["ErrorMessage"] = "User not found.";
+                return RedirectToAction(nameof(ManageUsers));
+            }
+
+            // --- Safety Check: Prevent deleting the last admin ---
+            if (await _userManager.IsInRoleAsync(user, "Admin"))
+            {
+                var admins = await _userManager.GetUsersInRoleAsync("Admin");
+                if (admins.Count <= 1)
+                {
+                    TempData["ErrorMessage"] = "Cannot delete the only administrator account.";
+                    return RedirectToAction(nameof(ManageUsers));
+                }
+            }
+
+            var result = await _userManager.DeleteAsync(user);
+
+            if (result.Succeeded)
+            {
+                TempData["SuccessMessage"] = "User deleted successfully!";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Error deleting user.";
+            }
+
+            return RedirectToAction(nameof(ManageUsers));
+        }
+
+        // POST: /Admin/ResetUserPassword
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetUserPassword(string userId, string newPassword)
+        {
+            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(newPassword))
+            {
+                TempData["ErrorMessage"] = "User ID and new password are required.";
+                return RedirectToAction(nameof(ManageUsers));
+            }
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                TempData["ErrorMessage"] = "User not found.";
+                return RedirectToAction(nameof(ManageUsers));
+            }
+
+            // Generate a password reset token and use it to reset the password
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var result = await _userManager.ResetPasswordAsync(user, token, newPassword);
+
+            if (result.Succeeded)
+            {
+                TempData["SuccessMessage"] = $"Password for {user.Email} has been reset successfully.";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Failed to reset password.";
+            }
+
             return RedirectToAction(nameof(ManageUsers));
         }
 

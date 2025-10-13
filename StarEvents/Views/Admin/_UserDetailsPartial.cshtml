@@ -50,4 +50,17 @@
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
         <button type="submit" class="btn btn-primary">Save changes</button>
     </div>
-</form>
+</form> <hr /> <form asp-action="ResetUserPassword" method="post" asp-controller="Admin" class="p-3">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" name="userId" />
+
+    <h5 class="mb-3">🔑 Reset Password</h5>
+    <div class="form-group mb-3">
+        <label for="newPassword">New Password</label>
+        <input type="password" name="newPassword" class="form-control" placeholder="Enter a new password" required minlength="6" />
+        <small class="text-muted">A new password will be set for the user.</small>
+    </div>
+    <div class="text-end">
+        <button type="submit" class="btn btn-warning">Reset Password</button>
+    </div>
+</form> 
