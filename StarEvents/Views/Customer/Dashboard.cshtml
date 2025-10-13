@@ -303,7 +303,10 @@
 <div class="dashboard-container">
     <div class="container">
         <div class="welcome-section">
-            <h1>Welcome back, @Model.UserName! 👋</h1>
+            <h1>
+                Welcome back, @Model.UserName!
+                👋
+            </h1>
             <p>Discover amazing events and create unforgettable memories.</p>
         </div>
 
@@ -311,29 +314,34 @@
             <div class="col-md-3 col-sm-6 mb-3">
                 <div class="stats-card">
                     <div class="icon">🎫</div>
+
                     <h3>@Model.TotalBookings</h3>
                     <p>Confirmed Bookings</p>
                 </div>
             </div>
             <div class="col-md-3 col-sm-6 mb-3">
                 <div class="stats-card">
+
                     <div class="icon">📅</div>
                     <h3>@Model.UpcomingEventsCount</h3>
                     <p>Upcoming Events</p>
                 </div>
             </div>
             <div class="col-md-3 col-sm-6 mb-3">
+
                 <div class="stats-card">
                     <div class="icon">⭐</div>
                     <h3>@Model.LoyaltyPoints</h3>
                     <p>Loyalty Points</p>
                 </div>
+
             </div>
             <div class="col-md-3 col-sm-6 mb-3">
                 <div class="stats-card">
                     <div class="icon">💰</div>
                     <h3>LKR @Model.TotalSpent.ToString("N2")</h3>
                     <p>Total Spent</p>
+
                 </div>
             </div>
         </div>
@@ -342,32 +350,40 @@
             <h2 class="section-title">🔥 Featured Events</h2>
             <div class="row">
                 @if (Model.FeaturedEvents != null && Model.FeaturedEvents.Any())
+
                 {
                     foreach (var evt in Model.FeaturedEvents)
                     {
                         <div class="col-md-4 mb-4">
+
                             <div class="event-card">
                                 <img src="@evt.ImageUrl" alt="@evt.Title" onerror="this.src='/images/default-event.jpg'" />
                                 <div class="event-card-body">
+
                                     <span class="event-date">📅 @evt.StartDate.ToString("MMM dd, yyyy")</span>
                                     <h3 class="event-title">@evt.Title</h3>
                                     <p class="event-location">
+
                                         <i class="fas fa-map-marker-alt"></i> @evt.Location
                                     </p>
+
                                     <div class="event-price">LKR @evt.TicketPrice.ToString("N2")</div>
                                     <a href="@Url.Action("Details", "Events", new { id = evt.Id })" class="btn btn-book">View Details</a>
                                 </div>
+
                             </div>
                         </div>
                     }
                 }
                 else
+
                 {
                     <div class="col-12"><div class="no-data"><p>No featured events right now.</p></div></div>
                 }
             </div>
             <div class="text-center mt-4">
-                <a href="@Url.Action("Index", "Events")" class="btn btn-book" style="width: auto; padding: 12px 40px;">View All Events →</a>
+                <a href="@Url.Action("Index", "Events")" class="btn btn-book" style="width: auto;
+                padding: 12px 40px;">View All Events →</a>
             </div>
         </div>
 
@@ -376,33 +392,42 @@
             @if (Model.RecentBookings != null && Model.RecentBookings.Any())
             {
                 foreach (var booking in Model.RecentBookings)
+
                 {
                     <div class="booking-card">
                         <div class="booking-header">
                             <h3 class="booking-title">@booking.Event.Title</h3>
+
                             <span class="booking-status status-@booking.Status.ToLower()">@booking.Status</span>
                         </div>
                         <div class="booking-details">
                             <div class="booking-info">
+
                                 <strong>Booking ID</strong>
                                 #@booking.Id.ToString("D6")
                             </div>
+
                             <div class="booking-info">
                                 <strong>Date</strong>
                                 @FormatDate(booking.Event.StartDate)
+
                             </div>
                             <div class="booking-info">
                                 <strong>Tickets</strong>
+
                                 @booking.TicketQuantity tickets
                             </div>
                             <div class="booking-info">
                                 <strong>Total Amount</strong>
+
                                 LKR @booking.TotalAmount.ToString("N2")
                             </div>
                             <div class="booking-info">
+
                                 <a href="@Url.Action("ViewTicket", "Bookings", new { id = booking.Id })" class="btn btn-sm btn-action">View Ticket</a>
                             </div>
                         </div>
+
                     </div>
                 }
             }
@@ -410,7 +435,11 @@
             {
                 <div class="no-data">
                     <i class="fas fa-ticket-alt"></i>
-                    <p>No bookings yet. Book your first event now!</p>
+
+                    <p>
+                        No bookings yet.
+                        Book your first event now!
+                    </p>
                 </div>
             }
         </div>
@@ -418,38 +447,49 @@
         <div class="mb-5">
             <h2 class="section-title">⚡ Quick Actions</h2>
             <div class="row">
-                <div class="col-md-3 col-sm-6 mb-4">
+                <div class="col-md-4 col-sm-6 mb-4">
+
                     <div class="quick-action-card">
                         <div class="quick-action-icon">🔍</div>
                         <h3 class="quick-action-title">Browse Events</h3>
                         <p class="quick-action-desc">Discover exciting events near you</p>
+
                         <a href="@Url.Action("Index", "Events")" class="btn btn-action">Explore</a>
                     </div>
                 </div>
-                <div class="col-md-3 col-sm-6 mb-4">
+                <div class="col-md-4 col-sm-6 mb-4">
+
                     <div class="quick-action-card">
                         <div class="quick-action-icon">📜</div>
                         <h3 class="quick-action-title">My Bookings</h3>
                         <p class="quick-action-desc">View all your bookings</p>
+
                         <a href="@Url.Action("MyBookings", "Bookings")" class="btn btn-action">View</a>
                     </div>
                 </div>
-                <div class="col-md-3 col-sm-6 mb-4">
+                <div class="col-md-4 col-sm-6 mb-4">
                     <div class="quick-action-card">
+
                         <div class="quick-action-icon">👤</div>
                         <h3 class="quick-action-title">My Profile</h3>
                         <p class="quick-action-desc">Update your information</p>
-                        <a href="@Url.Action("Profile", "Account")" class="btn btn-action">Edit</a>
+                        <a href="@Url.Action("Profile", "Customer")" class="btn btn-action">Edit</a>
+
                     </div>
                 </div>
+
+                @* --- THIS SECTION HAS BEEN REMOVED ---
                 <div class="col-md-3 col-sm-6 mb-4">
                     <div class="quick-action-card">
                         <div class="quick-action-icon">💳</div>
-                        <h3 class="quick-action-title">Payment Methods</h3>
+         
+                               <h3 class="quick-action-title">Payment Methods</h3>
                         <p class="quick-action-desc">Manage payment options</p>
                         <a href="@Url.Action("PaymentMethods", "Account")" class="btn btn-action">Manage</a>
                     </div>
-                </div>
+        
+                 </div>
+                *@
             </div>
         </div>
     </div>
@@ -461,24 +501,27 @@
         $(document).ready(function() {
             // Animate stats on load
             $('.stats-card h3').each(function() {
-                var $this = $(this);
-                var countTo = $this.text();
 
-                // Only animate if it's a number
+                     var $this = $(this);
+                var countTo = $this.text();
+                 // Only animate if it's a number
                 if (!isNaN(countTo)) {
                     $({ countNum: 0 }).animate({
                         countNum: countTo
                     }, {
-                        duration: 1500,
+
+                                 duration: 1500,
                         easing: 'swing',
                         step: function() {
                             $this.text(Math.floor(this.countNum));
-                        },
+
+                                     },
                         complete: function() {
                             $this.text(this.countNum);
                         }
-                    });
-                }
+
+                                   });
+                 }
             });
         });
     </script>
