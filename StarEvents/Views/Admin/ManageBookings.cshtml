@@ -303,9 +303,7 @@
                         <select name="status" class="filter-input">
                             <option value="">All Status</option>
                             <option value="Confirmed">Confirmed</option>
-                            <option value="Pending">Pending</option>
                             <option value="Cancelled">Cancelled</option>
-                            <option value="Completed">Completed</option>
                         </select>
                     </div>
                     <div class="filter-group">
@@ -356,8 +354,8 @@
                                 </td>
                                 <td>
                                     <div class="customer-info">
-                                        <span class="customer-name">@booking.Customer.FirstName @booking.Customer.LastName</span>
-                                        <span class="customer-email">@booking.Customer.Email</span>
+                                        <span class="customer-name">@booking.Customer?.FirstName @booking.Customer?.LastName</span>
+                                        <span class="customer-email">@booking.Customer?.Email</span>
                                     </div>
                                 </td>
                                 <td>
@@ -416,7 +414,7 @@
 
 @section Scripts {
     <script>
-        // Auto-submit form on filter change (optional)
+        // Auto-submit form on filter change
         document.querySelectorAll('.filter-input').forEach(input => {
             if (input.tagName === 'SELECT') {
                 input.addEventListener('change', function() {

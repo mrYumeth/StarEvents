@@ -279,15 +279,6 @@ namespace StarEvents.Controllers
             return View(venues);
         }
 
-        public async Task<IActionResult> ManageBookings()
-        {
-            var bookings = await _context.Bookings
-                .Include(b => b.Customer)
-                .Include(b => b.Event)
-                .OrderByDescending(b => b.BookingDate)
-                .ToListAsync();
-            return View(bookings);
-        }
 
         // ----------------------------------------------------------------------
         // Reports - Generate System Reports - UPDATED
@@ -367,70 +358,44 @@ namespace StarEvents.Controllers
             return View();
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateVenue(Venue venue)
+        // ----------------------------------------------------------------------
+        // Manage Bookings - UPDATED
+        // ----------------------------------------------------------------------
+        public async Task<IActionResult> ManageBookings(string status, string customerEmail, DateTime? fromDate, DateTime? toDate)
         {
-            if (ModelState.IsValid)
-            {
-                _context.Venues.Add(venue);
-                await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Venue created successfully!";
-                return RedirectToAction(nameof(ManageVenues));
-            }
-            return View(venue);
-        }
+            // Start with the base query and include all necessary related data
+            var query = _context.Bookings
+                .Include(b => b.Customer)
+                .Include(b => b.Event)
+                .Include(b => b.Payment) 
+                .AsQueryable();
 
-        public IActionResult CreateVenue()
-        {
-            return View();
-        }
-
-        public async Task<IActionResult> EditVenue(int id)
-        {
-            var venue = await _context.Venues.FindAsync(id);
-            if (venue == null)
+            // Apply filters from the view
+            if (!string.IsNullOrEmpty(status))
             {
-                return NotFound();
+                query = query.Where(b => b.Status == status);
             }
-            return View(venue);
-        }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditVenue(int id, Venue venue)
-        {
-            if (id != venue.Id)
+            if (!string.IsNullOrEmpty(customerEmail))
             {
-                return NotFound();
+                query = query.Where(b => b.Customer.Email.Contains(customerEmail));
             }
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(venue);
-                    await _context.SaveChangesAsync();
-                    TempData["SuccessMessage"] = "Venue updated successfully!";
-                    return RedirectToAction(nameof(ManageVenues));
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!_context.Venues.Any(v => v.Id == id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-            }
-            return View(venue);
-        }
 
-        private bool VenueExists(int id)
-        {
-            return _context.Venues.Any(e => e.Id == id);
+            if (fromDate.HasValue)
+            {
+                query = query.Where(b => b.BookingDate >= fromDate.Value);
+            }
+
+            if (toDate.HasValue)
+            {
+                // Add 1 day to the 'toDate' to include all bookings on that day
+                query = query.Where(b => b.BookingDate < toDate.Value.AddDays(1));
+            }
+
+            // Execute the final query
+            var bookings = await query.OrderByDescending(b => b.BookingDate).ToListAsync();
+
+            return View(bookings);
         }
     }
 }
