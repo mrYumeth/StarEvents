@@ -1,4 +1,5 @@
-﻿@{
+﻿@using StarEvents.Models
+@{
     ViewData["Title"] = "Admin Dashboard";
 }
 
@@ -16,16 +17,16 @@
         box-shadow: 0 10px 30px rgba(220, 53, 69, 0.2);
     }
 
-    .dashboard-header h1 {
-        font-size: 2.5rem;
-        font-weight: 700;
-        margin-bottom: 10px;
-    }
+        .dashboard-header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
 
-    .dashboard-header p {
-        font-size: 1.1rem;
-        opacity: 0.95;
-    }
+        .dashboard-header p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+        }
 
     .stats-grid {
         display: grid;
@@ -43,26 +44,26 @@
         border-left: 5px solid;
     }
 
-    .stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-    }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
 
-    .stat-card.users {
-        border-color: #007bff;
-    }
+        .stat-card.users {
+            border-color: #007bff;
+        }
 
-    .stat-card.events {
-        border-color: #28a745;
-    }
+        .stat-card.events {
+            border-color: #28a745;
+        }
 
-    .stat-card.bookings {
-        border-color: #ffc107;
-    }
+        .stat-card.bookings {
+            border-color: #ffc107;
+        }
 
-    .stat-card.revenue {
-        border-color: #dc3545;
-    }
+        .stat-card.revenue {
+            border-color: #dc3545;
+        }
 
     .stat-icon {
         font-size: 3rem;
@@ -104,13 +105,13 @@
         border-top: 1px solid #f0f0f0;
     }
 
-    .stat-change.positive {
-        color: #28a745;
-    }
+        .stat-change.positive {
+            color: #28a745;
+        }
 
-    .stat-change.negative {
-        color: #dc3545;
-    }
+        .stat-change.negative {
+            color: #dc3545;
+        }
 
     .quick-actions {
         display: grid;
@@ -130,10 +131,10 @@
         display: block;
     }
 
-    .action-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-    }
+        .action-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
 
     .action-icon {
         font-size: 2.5rem;
@@ -162,13 +163,13 @@
         gap: 10px;
     }
 
-    .section-title::before {
-        content: '';
-        width: 5px;
-        height: 30px;
-        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-        border-radius: 3px;
-    }
+        .section-title::before {
+            content: '';
+            width: 5px;
+            height: 30px;
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            border-radius: 3px;
+        }
 
     .content-grid {
         display: grid;
@@ -192,9 +193,9 @@
         margin-bottom: 15px;
     }
 
-    .activity-item:last-child {
-        margin-bottom: 0;
-    }
+        .activity-item:last-child {
+            margin-bottom: 0;
+        }
 
     .activity-title {
         font-weight: 600;
@@ -220,20 +221,20 @@
         margin-bottom: 15px;
     }
 
-    .alert-item.warning {
-        background: #fff3cd;
-        border-left: 3px solid #ffc107;
-    }
+        .alert-item.warning {
+            background: #fff3cd;
+            border-left: 3px solid #ffc107;
+        }
 
-    .alert-item.danger {
-        background: #f8d7da;
-        border-left: 3px solid #dc3545;
-    }
+        .alert-item.danger {
+            background: #f8d7da;
+            border-left: 3px solid #dc3545;
+        }
 
-    .alert-item.info {
-        background: #d1ecf1;
-        border-left: 3px solid #17a2b8;
-    }
+        .alert-item.info {
+            background: #d1ecf1;
+            border-left: 3px solid #17a2b8;
+        }
 
     .chart-container {
         background: white;
@@ -252,13 +253,11 @@
 
 <div class="admin-dashboard">
     <div class="container">
-        <!-- Header -->
         <div class="dashboard-header">
             <h1>🛡️ Admin Dashboard</h1>
             <p>System Overview and Management Center</p>
         </div>
 
-        <!-- Statistics Cards -->
         <div class="stats-grid">
             <div class="stat-card users">
                 <div class="stat-icon">👥</div>
@@ -266,30 +265,39 @@
                 <div class="stat-label">Total Users</div>
                 <div class="stat-change positive">↑ @ViewBag.NewUsersThisMonth new this month</div>
             </div>
-
             <div class="stat-card events">
                 <div class="stat-icon">🎫</div>
                 <div class="stat-value">@ViewBag.TotalEvents</div>
                 <div class="stat-label">Total Events</div>
                 <div class="stat-change positive">↑ @ViewBag.ActiveEvents active now</div>
             </div>
-
             <div class="stat-card bookings">
                 <div class="stat-icon">📋</div>
                 <div class="stat-value">@ViewBag.TotalBookings</div>
                 <div class="stat-label">Total Bookings</div>
                 <div class="stat-change positive">↑ @ViewBag.BookingsThisMonth this month</div>
             </div>
-
             <div class="stat-card revenue">
                 <div class="stat-icon">💰</div>
                 <div class="stat-value">LKR @ViewBag.TotalRevenue</div>
                 <div class="stat-label">Total Revenue</div>
-                <div class="stat-change positive">↑ @ViewBag.RevenueGrowth% growth</div>
+
+                @{
+                    // Convert the ViewBag value to a decimal for comparison
+                    decimal revenueGrowth = Convert.ToDecimal(ViewBag.RevenueGrowth);
+                }
+
+                @if (revenueGrowth >= 0)
+                {
+                    <div class="stat-change positive">↑ @revenueGrowth% this month</div>
+                }
+                else
+                {
+                    <div class="stat-change negative">↓ @(revenueGrowth * -1)% this month</div>
+                }
             </div>
         </div>
 
-        <!-- Quick Actions -->
         <h2 class="section-title">⚡ Quick Actions</h2>
         <div class="quick-actions">
             <a href="@Url.Action("ManageUsers", "Admin")" class="action-card">
@@ -297,25 +305,21 @@
                 <div class="action-title">Manage Users</div>
                 <div class="action-desc">View and edit user accounts</div>
             </a>
-
             <a href="@Url.Action("ManageEvents", "Admin")" class="action-card">
                 <div class="action-icon">🎫</div>
                 <div class="action-title">Manage Events</div>
                 <div class="action-desc">Control all events</div>
             </a>
-
             <a href="@Url.Action("ManageBookings", "Admin")" class="action-card">
                 <div class="action-icon">📋</div>
                 <div class="action-title">View Bookings</div>
                 <div class="action-desc">All booking records</div>
             </a>
-
             <a href="@Url.Action("Reports", "Admin")" class="action-card">
                 <div class="action-icon">📊</div>
                 <div class="action-title">Generate Reports</div>
                 <div class="action-desc">Sales and analytics</div>
             </a>
-
             <a href="@Url.Action("SystemSettings", "Admin")" class="action-card">
                 <div class="action-icon">⚙️</div>
                 <div class="action-title">System Settings</div>
@@ -323,84 +327,78 @@
             </a>
         </div>
 
-        <!-- Content Grid -->
         <div class="content-grid">
-            <!-- Recent Activity -->
             <div class="recent-activity">
                 <h3 class="section-title" style="font-size: 1.3rem;">📌 Recent Activity</h3>
-
-                @if (ViewBag.RecentActivities != null && ViewBag.RecentActivities.Count > 0)
+                @{
+                    var activities = ViewBag.RecentActivities as List<DashboardActivityViewModel>;
+                }
+                @if (activities != null && activities.Any())
                 {
-                    foreach (var activity in ViewBag.RecentActivities)
+                    foreach (var activity in activities)
                     {
                         <div class="activity-item">
-                            <div class="activity-title">@activity.Title</div>
-                            <div class="activity-time">@activity.Time</div>
+                            <div class="activity-title">@activity.Description</div>
+                            <div class="activity-time">@activity.Timestamp.ToString("MMM dd, yyyy hh:mm tt")</div>
                         </div>
                     }
                 }
                 else
                 {
                     <div class="activity-item">
-                        <div class="activity-title">New user registered: john@example.com</div>
-                        <div class="activity-time">2 minutes ago</div>
-                    </div>
-                    <div class="activity-item">
-                        <div class="activity-title">Event "Grand Concert" created</div>
-                        <div class="activity-time">15 minutes ago</div>
-                    </div>
-                    <div class="activity-item">
-                        <div class="activity-title">Booking #000123 confirmed</div>
-                        <div class="activity-time">1 hour ago</div>
-                    </div>
-                    <div class="activity-item">
-                        <div class="activity-title">Venue "City Hall" updated</div>
-                        <div class="activity-time">3 hours ago</div>
+                        <div class="activity-title">No recent activity found.</div>
                     </div>
                 }
             </div>
 
-            <!-- System Alerts -->
             <div class="system-alerts">
                 <h3 class="section-title" style="font-size: 1.3rem;">⚠️ System Alerts</h3>
 
-                <div class="alert-item warning">
-                    <strong>⚠️ Low Tickets</strong>
-                    <p style="margin: 5px 0 0 0; font-size: 0.9rem;">5 events have less than 10 tickets remaining</p>
-                </div>
+                @if (ViewBag.LowStockEventsCount > 0)
+                {
+                    <div class="alert-item warning">
+                        <strong>⚠️ Low Tickets</strong>
+                        <p style="margin: 5px 0 0 0; font-size: 0.9rem;">
+                            @ViewBag.LowStockEventsCount events have less than 10 tickets remaining.
+                        </p>
+                    </div>
+                }
 
-                <div class="alert-item info">
-                    <strong>ℹ️ Pending Approvals</strong>
-                    <p style="margin: 5px 0 0 0; font-size: 0.9rem;">@ViewBag.PendingApprovals events pending approval</p>
-                </div>
+                @if (ViewBag.PendingApprovals > 0)
+                {
+                    <div class="alert-item info">
+                        <strong>ℹ️ Pending Approvals</strong>
+                        <p style="margin: 5px 0 0 0; font-size: 0.9rem;">
+                            @ViewBag.PendingApprovals events pending approval.
+                        </p>
+                    </div>
+                }
 
                 <div class="alert-item danger">
                     <strong>🔴 System Backup</strong>
-                    <p style="margin: 5px 0 0 0; font-size: 0.9rem;">Last backup: 2 days ago</p>
+                    <p style="margin: 5px 0 0 0; font-size: 0.9rem;">Last backup: @ViewBag.LastBackupDays days ago</p>
                 </div>
             </div>
-        </div>
-
-        <!-- Chart Section -->
-        <div class="chart-container">
+        </div> <div class="chart-container">
             <h3 class="section-title">📈 Revenue Overview</h3>
-            <canvas id="revenueChart" style="max-height: 300px;"></canvas>
-        </div>
-    </div>
+            <canvas id="revenueChart" style="max-height: 400px;"></canvas>
 </div>
 
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // Revenue Chart
+        // Use Html.Raw to inject the JSON data from the controller directly into JavaScript
+        const chartLabels = @Html.Raw(ViewBag.ChartLabels);
+        const chartData = @Html.Raw(ViewBag.ChartData);
+
         const ctx = document.getElementById('revenueChart').getContext('2d');
         const revenueChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'],
+                labels: chartLabels, // <-- DYNAMIC DATA
                 datasets: [{
                     label: 'Revenue (LKR)',
-                    data: [50000, 75000, 60000, 90000, 120000, 150000, 140000, 180000, 200000, 220000],
+                    data: chartData,  // <-- DYNAMIC DATA
                     borderColor: '#dc3545',
                     backgroundColor: 'rgba(220, 53, 69, 0.1)',
                     tension: 0.4,
@@ -409,7 +407,7 @@
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: true,
+                maintainAspectRatio: false, // Set to false to allow the chart to fill the container's height
                 plugins: {
                     legend: {
                         display: true,

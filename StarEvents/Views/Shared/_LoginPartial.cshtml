@@ -16,7 +16,21 @@
                 <i class="fas fa-user-circle"></i> @userName
             </a>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown" style="background-color: #1f1f1f;">
-                <li><a class="dropdown-item" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage" style="color: #faf5ef;">My Profile</a></li>
+                <li><a class="dropdown-item" asp-controller="Customer" asp-action="Profile" style="color: #faf5ef;">My Profile</a></li>
+
+                @if (User.IsInRole("Admin"))
+                {
+                    <li><a class="dropdown-item" asp-action="Dashboard" asp-controller="Admin" style="color: #faf5ef;">Admin Dashboard</a></li>
+                }
+                else if (User.IsInRole("Customer"))
+                {
+                    <li><a class="dropdown-item" asp-action="Dashboard" asp-controller="Customer" style="color: #faf5ef;">My Dashboard</a></li>
+                }
+                else if (User.IsInRole("Organizer"))
+                {
+                    <li><a class="dropdown-item" asp-action="Index" asp-controller="Organizers" style="color: #faf5ef;">Organizer Dashboard</a></li>
+                }
+
                 <li><hr class="dropdown-divider" style="border-color: #444;"></li>
                 <li>
                     <form class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">

@@ -31,11 +31,11 @@ namespace StarEvents.Controllers
                     }
                     if (await _userManager.IsInRoleAsync(user, "Organizer"))
                     {
-                        return RedirectToAction("Dashboard", "Organizer"); // Assuming Organizer dashboard is at /Organizer/Dashboard
+                        return RedirectToAction("Dashboard", "Organizer"); // Assuming Organizer dashboard is at /Organizer/Index
                     }
                     if (await _userManager.IsInRoleAsync(user, "Customer"))
                     {
-                        return RedirectToAction("Dashb  oard", "Customer"); // Redirects to your /Customer/Dashboard
+                        return RedirectToAction("Dashboard", "Customer"); // Redirects to your /Customer/Dashboard
                     }
                 }
             }

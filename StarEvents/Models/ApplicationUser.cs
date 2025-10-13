@@ -11,6 +11,8 @@ namespace StarEvents.Models
         public string? LastName { get; set; }
         public int LoyaltyPoints { get; set; } = 0;
 
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
         // Navigation properties for relationships
         public virtual ICollection<Booking>? Bookings { get; set; }
         public virtual ICollection<CustomerPayment>? Payments { get; set; }
