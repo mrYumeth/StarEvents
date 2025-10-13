@@ -107,17 +107,20 @@ namespace StarEvents.Controllers
                 Description = eventEntity.Description,
                 Category = eventEntity.Category,
                 StartDate = eventEntity.StartDate,
-                EndDate = eventEntity.EndDate,
+                EndDate = eventEntity.EndDate, // Now a non-nullable DateTime
                 ImageUrl = eventEntity.ImageUrl,
+
+                // --- THIS LOGIC IS CORRECTED ---
                 DateDisplay = eventEntity.StartDate.ToString("ddd, MMM d, yyyy h:mm tt") +
-                              (eventEntity.EndDate.HasValue
-                                  ? $" - {eventEntity.EndDate.Value.ToString("h:mm tt")}"
+                              (eventEntity.EndDate > eventEntity.StartDate // <-- THIS LINE CHANGES
+                                  ? $" - {eventEntity.EndDate.ToString("h:mm tt")}" // <-- THIS LINE CHANGES
                                   : ""),
+
                 VenueName = eventEntity.VenueName,
                 VenueAddress = $"{eventEntity.VenueName}, {eventEntity.Location}",
                 VenueCity = eventEntity.Location,
                 OrganizerName = $"{eventEntity.Organizer.FirstName} {eventEntity.Organizer.LastName}",
-                AvailableTickets = eventEntity.AvailableTickets ?? 0,
+                AvailableTickets = eventEntity.AvailableTickets ??0,
                 TicketPrice = $"LKR {eventEntity.TicketPrice:N2}"
             };
 

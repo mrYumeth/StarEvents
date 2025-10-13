@@ -1,0 +1,97 @@
+﻿@model StarEvents.Models.Event
+@{
+    ViewData["Title"] = "Create New Event";
+}
+
+<style>
+    .create-event-container {
+        max-width: 800px;
+        margin: 40px auto;
+        background: white;
+        padding: 40px;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+</style>
+
+<div class="create-event-container">
+    <h1 class="mb-4">Create New Event</h1>
+
+    <form asp-action="CreateEvent" method="post" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+        <div class="mb-3">
+            <label asp-for="Title" class="form-label"></label>
+            <input asp-for="Title" class="form-control" placeholder="e.g., Grand Music Concert" required />
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Description" class="form-label"></label>
+            <textarea asp-for="Description" class="form-control" rows="4" placeholder="Describe the event..."></textarea>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="Category" class="form-label"></label>
+                <select asp-for="Category" class="form-select" required>
+                    <option value="">-- Select Category --</option>
+                    <option value="Music">Music</option>
+                    <option value="Theatre">Theatre</option>
+                    <option value="Conference">Conference</option>
+                    <option value="Festival">Festival</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label asp-for="VenueName" class="form-label"></label>
+                <input asp-for="VenueName" class="form-control" placeholder="e.g., Nelum Pokuna" required />
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Location" class="form-label"></label>
+            <input asp-for="Location" class="form-control" placeholder="e.g., Colombo, Sri Lanka" required />
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="StartDate" class="form-label"></label>
+                <input asp-for="StartDate" type="datetime-local" class="form-control" required />
+            </div>
+            <div class="col-md-6 mb-3">
+                <label asp-for="EndDate" class="form-label"></label>
+                <input asp-for="EndDate" type="datetime-local" class="form-control" required />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="TicketPrice" class="form-label"></label>
+                <input asp-for="TicketPrice" type="number" class="form-control" step="0.01" min="0" required />
+            </div>
+            <div class="col-md-6 mb-3">
+                <label asp-for="AvailableTickets" class="form-label"></label>
+                <input asp-for="AvailableTickets" type="number" class="form-control" min="1" required />
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="ImageFile" class="form-label"></label>
+            <input asp-for="ImageFile" class="form-control" type="file" accept="image/*" />
+        </div>
+
+        <hr class="my-4" />
+
+        <div class="d-flex justify-content-end gap-2">
+            <a asp-action="ManageEvents" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">Create Event</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{
+        await Html.PartialAsync("_ValidationScriptsPartial");
+    }
+}

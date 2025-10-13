@@ -176,7 +176,12 @@
         <!-- Header -->
         <div class="page-header">
             <h1>🎫 Manage Events</h1>
-            <a href="@Url.Action("Dashboard", "Admin")" class="btn btn-light">← Back to Dashboard</a>
+            <div>
+                <a asp-action="CreateEvent" asp-controller="Admin" class="btn btn-success me-2">
+                    + Create New Event
+                </a>
+                <a href="@Url.Action("Dashboard", "Admin")" class="btn btn-light">← Back to Dashboard</a>
+            </div>
         </div>
 
         @if (TempData["SuccessMessage"] != null)

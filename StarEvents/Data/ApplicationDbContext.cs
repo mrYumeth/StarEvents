@@ -20,6 +20,7 @@ namespace StarEvents.Data
 
         public DbSet<SystemSetting> SystemSettings { get; set; }
 
+        public DbSet<Venue> Venues { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
