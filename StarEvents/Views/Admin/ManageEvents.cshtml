@@ -205,10 +205,6 @@
                class="filter-tab @(ViewBag.CurrentFilter == "active" ? "active" : "")">
                 Active
             </a>
-            <a href="@Url.Action("ManageEvents", new { status = "draft" })"
-               class="filter-tab @(ViewBag.CurrentFilter == "draft" ? "active" : "")">
-                Pending Approval
-            </a>
             <a href="@Url.Action("ManageEvents", new { status = "cancelled" })"
                class="filter-tab @(ViewBag.CurrentFilter == "cancelled" ? "active" : "")">
                 Cancelled

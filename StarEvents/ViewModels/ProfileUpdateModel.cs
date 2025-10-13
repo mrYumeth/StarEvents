@@ -2,9 +2,8 @@
 
 namespace StarEvents.ViewModels
 {
-    public class ProfileViewModel
+    public class ProfileUpdateModel
     {
-        // --- These properties are submitted by the form ---
         [Required]
         [Display(Name = "First Name")]
         public string FirstName { get; set; }
@@ -16,11 +15,5 @@ namespace StarEvents.ViewModels
         [Display(Name = "Phone Number")]
         [Phone]
         public string PhoneNumber { get; set; }
-
-        // --- These properties are for display ONLY ---
-        // They have no validation because they are not submitted.
-        public string Email { get; set; }
-        public int LoyaltyPoints { get; set; }
-        public DateTime CreatedAt { get; set; }
     }
 }

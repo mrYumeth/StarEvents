@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StarEvents.Data;
 using StarEvents.Models;
-using StarEvents.ViewModels;
+using StarEvents.ViewModels; // Make sure you have this using statement
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -23,19 +23,13 @@ namespace StarEvents.Controllers
             _userManager = userManager;
         }
 
-        // ----------------------------------------------------------------------
-        // 0. Index - Redirects to the main Dashboard page.
-        // ----------------------------------------------------------------------
-        // GET: /Customer/Index (or just /Customer)
+        // GET: /Customer or /Customer/Index
         public IActionResult Index()
         {
-            // Redirect to the new Dashboard action
+            // Redirect to the main Dashboard page
             return RedirectToAction(nameof(Dashboard));
         }
 
-        // ----------------------------------------------------------------------
-        // 1. Dashboard - The main customer landing page after login.
-        // ----------------------------------------------------------------------
         // GET: /Customer/Dashboard
         public async Task<IActionResult> Dashboard()
         {
@@ -48,7 +42,7 @@ namespace StarEvents.Controllers
             // --- Data Fetching ---
             var allUserBookings = await _context.Bookings
                 .Where(b => b.CustomerId == user.Id)
-                .Include(b => b.Event) // Correctly include just the event
+                .Include(b => b.Event)
                 .OrderByDescending(b => b.BookingDate)
                 .ToListAsync();
 
@@ -76,11 +70,8 @@ namespace StarEvents.Controllers
             return View(dashboardViewModel);
         }
 
-        // ----------------------------------------------------------------------
-        // 2. Profile - Loads the profile editing view.
-        // ----------------------------------------------------------------------
-        // ----------------------------------------------------------------------
-        // GET: /Customer/Profile
+        // GET: /Customer/Profile (UPDATED)
+        [HttpGet]
         public async Task<IActionResult> Profile()
         {
             var user = await _userManager.GetUserAsync(User);
@@ -89,30 +80,45 @@ namespace StarEvents.Controllers
                 return Challenge();
             }
 
+            // Calculate stats for the sidebar
+            ViewBag.TotalBookings = await _context.Bookings
+                .CountAsync(b => b.CustomerId == user.Id);
+
+            ViewBag.UpcomingEvents = await _context.Bookings
+                .CountAsync(b => b.CustomerId == user.Id && b.Event.StartDate > DateTime.Now);
+
+            ViewBag.TotalSpent = await _context.Bookings
+                .Where(b => b.CustomerId == user.Id && (b.Status == "Confirmed" || b.Status == "Completed"))
+                .SumAsync(b => b.TotalAmount);
+
+            // Populate the view model with ALL required user data
             var profileViewModel = new ProfileViewModel
             {
+                // Form fields
                 FirstName = user.FirstName,
                 LastName = user.LastName,
-                Email = user.Email
+                PhoneNumber = user.PhoneNumber,
+
+                // Display fields
+                Email = user.Email,
+                LoyaltyPoints = user.LoyaltyPoints, // ADDED
+                CreatedAt = user.CreatedAt // ADDED
             };
 
             return View(profileViewModel);
         }
 
-        // POST: /Customer/Profile (Final Corrected Version)
+        // POST: /Customer/Profile
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Profile(ProfileViewModel model)
+        public async Task<IActionResult> Profile(ProfileUpdateModel model) // <-- USES THE NEW MODEL
         {
+            // This check will now pass because Email is not part of the model.
             if (!ModelState.IsValid)
             {
-                // If validation fails, repopulate the email before returning the view
-                var currentUserForEmail = await _userManager.GetUserAsync(User);
-                if (currentUserForEmail != null)
-                {
-                    model.Email = currentUserForEmail.Email;
-                }
-                return View(model);
+                TempData["ErrorMessage"] = "Please ensure all required fields are filled correctly.";
+                // If validation fails, redirect back to the GET action to reload all data.
+                return RedirectToAction(nameof(Profile));
             }
 
             var user = await _userManager.GetUserAsync(User);
@@ -121,34 +127,60 @@ namespace StarEvents.Controllers
                 return NotFound("Unable to load user.");
             }
 
-            // Update the properties of the user object
+            // Update the user object with the values from the new model.
             user.FirstName = model.FirstName;
             user.LastName = model.LastName;
+            user.PhoneNumber = model.PhoneNumber;
 
-            // --- DATABASE SAVE FIX ---
-            // Use the UserManager to update the user.
+            // Use the UserManager to persist these changes to the database.
             var result = await _userManager.UpdateAsync(user);
 
             if (result.Succeeded)
             {
-                // As an extra measure, explicitly save changes on the context.
-                // While UpdateAsync often handles this, this ensures it happens.
-                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Your profile has been updated successfully!";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Failed to update profile. Please try again.";
+            }
 
-                TempData["SuccessMessage"] = "Profile updated successfully!";
+            return RedirectToAction(nameof(Profile));
+        }
+
+        // --- NEW: Added the missing ChangePassword action ---
+        // POST: /Customer/ChangePassword
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePassword(string currentPassword, string newPassword, string confirmPassword)
+        {
+            if (string.IsNullOrEmpty(currentPassword) || string.IsNullOrEmpty(newPassword) || string.IsNullOrEmpty(confirmPassword))
+            {
+                TempData["ErrorMessage"] = "All password fields are required.";
                 return RedirectToAction(nameof(Profile));
             }
 
-            // If the update fails, add errors to the model state
-            foreach (var error in result.Errors)
+            if (newPassword != confirmPassword)
             {
-                ModelState.AddModelError(string.Empty, error.Description);
+                TempData["ErrorMessage"] = "New password and confirmation password do not match.";
+                return RedirectToAction(nameof(Profile));
             }
 
-            // Repopulate the email as it's not part of the form submission
-            model.Email = user.Email;
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return NotFound("Unable to load user.");
+            }
 
-            return View(model);
+            var changePasswordResult = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+
+            if (!changePasswordResult.Succeeded)
+            {
+                TempData["ErrorMessage"] = "Error: Could not change password. Please check your current password.";
+                return RedirectToAction(nameof(Profile));
+            }
+
+            TempData["SuccessMessage"] = "Your password has been changed successfully.";
+            return RedirectToAction(nameof(Profile));
         }
     }
 }

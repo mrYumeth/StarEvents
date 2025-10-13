@@ -29,9 +29,9 @@ namespace StarEvents.Controllers
                     {
                         return RedirectToAction("Dashboard", "Admin"); // Assuming Admin dashboard is at /Admin/Dashboard
                     }
-                    if (await _userManager.IsInRoleAsync(user, "Organizer"))
+                    if (await _userManager.IsInRoleAsync(user, "Organizers"))
                     {
-                        return RedirectToAction("Dashboard", "Organizer"); // Assuming Organizer dashboard is at /Organizer/Index
+                        return RedirectToAction("Index", "Organizers"); // Assuming Organizer dashboard is at /Organizer/Index
                     }
                     if (await _userManager.IsInRoleAsync(user, "Customer"))
                     {
