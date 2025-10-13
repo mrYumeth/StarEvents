@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Collections.Generic; // Add this using statement
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.AspNetCore.Http;
-using StarEvents.Data;
+using StarEvents.Models;
 
 namespace StarEvents.Models
 {
@@ -49,7 +49,7 @@ namespace StarEvents.Models
         public DateTime StartDate { get; set; }
 
         [Display(Name = "End Date")]
-        public DateTime? EndDate { get; set; }
+        public DateTime EndDate { get; set; }
 
         [Required]
         [Column(TypeName = "decimal(18,2)")]

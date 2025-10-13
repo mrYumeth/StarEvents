@@ -20,15 +20,18 @@ namespace StarEvents.Controllers
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly IWebHostEnvironment _webHostEnvironment; // Added for file uploads
 
         public AdminController(
             ApplicationDbContext context,
             UserManager<ApplicationUser> userManager,
-            RoleManager<IdentityRole> roleManager)
+            RoleManager<IdentityRole> roleManager,
+            IWebHostEnvironment webHostEnvironment) // Updated constructor
         {
             _context = context;
             _userManager = userManager;
             _roleManager = roleManager;
+            _webHostEnvironment = webHostEnvironment; // Assign the service
         }
 
         // ----------------------------------------------------------------------
@@ -382,10 +385,11 @@ namespace StarEvents.Controllers
         // ----------------------------------------------------------------------
         // Manage Events (List)
         // ----------------------------------------------------------------------
+        // GET: /Admin/ManageEvents
         public async Task<IActionResult> ManageEvents(string status = "all")
         {
             var query = _context.Events.Include(e => e.Organizer).AsQueryable();
-            if (status != "all")
+            if (status != "all" && !string.IsNullOrEmpty(status))
             {
                 query = query.Where(e => e.Status.ToLower() == status.ToLower());
             }
@@ -394,56 +398,86 @@ namespace StarEvents.Controllers
             return View(events);
         }
 
-        // ----------------------------------------------------------------------
-        // Approve/Reject Event
-        // ----------------------------------------------------------------------
-        [HttpPost]
-        public async Task<IActionResult> ApproveEvent(int id)
+        // --- CREATE EVENT ACTIONS (CORRECTED) ---
+        // GET: /Admin/CreateEvent
+        [HttpGet]
+        public IActionResult CreateEvent()
         {
-            var eventToApprove = await _context.Events.FindAsync(id);
-            if (eventToApprove == null) return NotFound();
-            eventToApprove.Status = "Active";
-            eventToApprove.IsActive = true;
-            eventToApprove.UpdatedAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
-            TempData["SuccessMessage"] = "Event approved successfully!";
-            return RedirectToAction(nameof(ManageEvents));
+            // Removed the ViewBag.Venues logic
+            return View();
         }
 
+        // POST: /Admin/CreateEvent
         [HttpPost]
-        public async Task<IActionResult> RejectEvent(int id, string reason)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateEvent(Event eventModel)
         {
-            var eventToReject = await _context.Events.FindAsync(id);
-            if (eventToReject == null) return NotFound();
-            eventToReject.Status = "Cancelled";
-            eventToReject.IsActive = false;
-            eventToReject.UpdatedAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
-            TempData["SuccessMessage"] = "Event rejected.";
-            return RedirectToAction(nameof(ManageEvents));
+            // --- THIS IS THE FIX ---
+            // Remove these from model state because they are assigned manually.
+            ModelState.Remove("OrganizerId");
+            ModelState.Remove("Organizer");
+            // -----------------------
+
+            if (ModelState.IsValid)
+            {
+                // Handle Image Upload
+                if (eventModel.ImageFile != null)
+                {
+                    string wwwRootPath = _webHostEnvironment.WebRootPath;
+                    string fileName = Path.GetFileNameWithoutExtension(eventModel.ImageFile.FileName);
+                    string extension = Path.GetExtension(eventModel.ImageFile.FileName);
+                    fileName = fileName + DateTime.Now.ToString("yymmssfff") + extension;
+                    eventModel.ImageUrl = "/images/events/" + fileName;
+                    string path = Path.Combine(wwwRootPath, "images/events", fileName);
+                    using (var fileStream = new FileStream(path, FileMode.Create))
+                    {
+                        await eventModel.ImageFile.CopyToAsync(fileStream);
+                    }
+                }
+
+                var currentUser = await _userManager.GetUserAsync(User);
+                if (currentUser == null)
+                {
+                    // This case should ideally not be reached if the user is authorized.
+                    return Challenge();
+                }
+
+                // Now you can assign the OrganizerId
+                eventModel.OrganizerId = currentUser.Id;
+                eventModel.CreatedAt = DateTime.UtcNow;
+                eventModel.UpdatedAt = DateTime.UtcNow;
+                eventModel.Status = "Active";
+                eventModel.IsActive = true;
+
+                _context.Add(eventModel);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Event created successfully!";
+                return RedirectToAction(nameof(ManageEvents));
+            }
+
+            // If we get here, another validation failed, so return to the form.
+            return View(eventModel);
         }
 
-        // ----------------------------------------------------------------------
-        // Edit Event (GET)
-        // ----------------------------------------------------------------------
+        // --- EDIT EVENT ACTIONS (CORRECTED) ---
+        // GET: /Admin/EditEvent/{id}
         [HttpGet]
         public async Task<IActionResult> EditEvent(int id)
         {
             var eventToEdit = await _context.Events.FindAsync(id);
             if (eventToEdit == null) return NotFound();
+            // Removed the ViewBag.Venues logic
             return View(eventToEdit);
         }
 
-        // ----------------------------------------------------------------------
-        // Edit Event (POST)
-        // ----------------------------------------------------------------------
+        // POST: /Admin/EditEvent/{id}
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditEvent(int id, Event eventModel)
         {
             if (id != eventModel.Id) return NotFound();
 
-            ModelState.Remove("Organizer");
+            ModelState.Remove("Organizer"); // Keep this to prevent validation errors
 
             if (ModelState.IsValid)
             {
@@ -452,6 +486,29 @@ namespace StarEvents.Controllers
                     var eventToUpdate = await _context.Events.FindAsync(id);
                     if (eventToUpdate == null) return NotFound();
 
+                    // Handle optional new image upload
+                    if (eventModel.ImageFile != null)
+                    {
+                        // (Optional: Delete old image)
+                        // if (!string.IsNullOrEmpty(eventToUpdate.ImageUrl))
+                        // {
+                        //     var oldImagePath = Path.Combine(_webHostEnvironment.WebRootPath, eventToUpdate.ImageUrl.TrimStart('/'));
+                        //     if (System.IO.File.Exists(oldImagePath)) { System.IO.File.Delete(oldImagePath); }
+                        // }
+
+                        string wwwRootPath = _webHostEnvironment.WebRootPath;
+                        string fileName = Path.GetFileNameWithoutExtension(eventModel.ImageFile.FileName);
+                        string extension = Path.GetExtension(eventModel.ImageFile.FileName);
+                        fileName = fileName + DateTime.Now.ToString("yymmssfff") + extension;
+                        eventToUpdate.ImageUrl = "/images/events/" + fileName; // Update the image path
+                        string path = Path.Combine(wwwRootPath, "images/events", fileName);
+                        using (var fileStream = new FileStream(path, FileMode.Create))
+                        {
+                            await eventModel.ImageFile.CopyToAsync(fileStream);
+                        }
+                    }
+
+                    // Update properties
                     eventToUpdate.Title = eventModel.Title;
                     eventToUpdate.Description = eventModel.Description;
                     eventToUpdate.Category = eventModel.Category;
@@ -479,22 +536,24 @@ namespace StarEvents.Controllers
             return View(eventModel);
         }
 
-        // ----------------------------------------------------------------------
-        // Delete Event
-        // ----------------------------------------------------------------------
+        // POST: /Admin/DeleteEvent
         [HttpPost]
+        [ValidateAntiForgeryToken] // <-- ADD THIS LINE
         public async Task<IActionResult> DeleteEvent(int id)
         {
             var eventToDelete = await _context.Events.FindAsync(id);
-            if (eventToDelete == null) return NotFound();
+            if (eventToDelete == null)
+            {
+                return NotFound();
+            }
+
             _context.Events.Remove(eventToDelete);
             await _context.SaveChangesAsync();
+
             TempData["SuccessMessage"] = "Event deleted successfully!";
             return RedirectToAction(nameof(ManageEvents));
         }
-
         #endregion
-
         #region Other Management sections...
 
 
@@ -513,8 +572,6 @@ namespace StarEvents.Controllers
             ViewBag.AverageBookingValue = totalTicketsDecimal > 0 ? (totalSalesDecimal / totalTicketsDecimal).ToString("N2") : "0.00";
             ViewBag.TotalCustomers = (await _userManager.GetUsersInRoleAsync("Customer")).Count;
             ViewBag.TotalOrganizers = (await _userManager.GetUsersInRoleAsync("Organizer")).Count;
-
-            // --- FIX: Add a new ViewBag property for the true total user count ---
             ViewBag.TotalUsers = await _userManager.Users.CountAsync();
 
 
@@ -564,6 +621,32 @@ namespace StarEvents.Controllers
                 .GroupBy(b => b.Status)
                 .Select(g => new { status = g.Key, count = g.Count() })
                 .ToListAsync();
+
+            // --- 2. NEW: User Report Data ---
+            var allUsers = await _userManager.Users.ToListAsync();
+            var userReportData = new
+            {
+                TotalUsers = allUsers.Count,
+                AdminCount = (await _userManager.GetUsersInRoleAsync("Admin")).Count,
+                OrganizerCount = (await _userManager.GetUsersInRoleAsync("Organizer")).Count,
+                CustomerCount = (await _userManager.GetUsersInRoleAsync("Customer")).Count,
+                RecentUsers = allUsers.OrderByDescending(u => u.CreatedAt).Take(5).ToList()
+            };
+            ViewBag.UserReport = userReportData;
+
+
+            // --- 3. NEW: Event Report Data ---
+            var allEvents = await _context.Events.ToListAsync();
+            var eventReportData = new
+            {
+                TotalEvents = allEvents.Count,
+                ActiveEvents = allEvents.Count(e => e.Status == "Active"),
+                DraftEvents = allEvents.Count(e => e.Status == "Draft"),
+                CancelledEvents = allEvents.Count(e => e.Status == "Cancelled"),
+                // An event is considered 'Completed' if its end date is in the past.
+                CompletedEvents = allEvents.Count(e => e.EndDate < DateTime.Now)
+            };
+            ViewBag.EventReport = eventReportData;
 
 
             return View();
@@ -691,6 +774,7 @@ namespace StarEvents.Controllers
 
             return View(bookings);
         }
+        
+
     }
 }
-
