@@ -205,7 +205,6 @@ namespace StarEvents.Controllers
         {
             var eventToEdit = await _context.Events.FindAsync(id);
             if (eventToEdit == null) return NotFound();
-            ViewBag.Venues = new SelectList(await _context.Venues.ToListAsync(), "VenueName", "VenueName", eventToEdit.VenueName);
             return View(eventToEdit);
         }
 
@@ -251,7 +250,6 @@ namespace StarEvents.Controllers
                     else throw;
                 }
             }
-            ViewBag.Venues = new SelectList(await _context.Venues.ToListAsync(), "VenueName", "VenueName", eventModel.VenueName);
             return View(eventModel);
         }
 
@@ -272,12 +270,6 @@ namespace StarEvents.Controllers
         #endregion
 
         #region Other Management sections...
-
-        public async Task<IActionResult> ManageVenues()
-        {
-            var venues = await _context.Venues.ToListAsync();
-            return View(venues);
-        }
 
 
         // ----------------------------------------------------------------------
