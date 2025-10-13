@@ -1,31 +1,75 @@
 html {
-  font-size: 14px;
+    font-size: 14px;
 }
 
 @media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
+    html {
+        font-size: 16px;
+    }
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+    box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
 
 html {
-  position: relative;
-  min-height: 100%;
+    position: relative;
+    min-height: 100%;
 }
 
+/* Main theme for the application.
+  This sets a global dark background and light text color.
+*/
 body {
-  margin-bottom: 60px;
+    margin-bottom: 60px;
+    background-color: #1a1a1a; /* Dark background */
+    color: #f0f0f0; /* Light text, which causes conflicts on white backgrounds */
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-  color: var(--bs-secondary-color);
-  text-align: end;
+/* ---------------------------------------------------------------------------------
+    THEME FIX: Text visibility on light backgrounds
+    This is the most important rule. It targets all common components that have 
+    a light or white background and forces their text color to be dark, 
+    overriding the global light text color from the body.
+---------------------------------------------------------------------------------
+*/
+.card,
+.table,
+.report-section,
+.summary-card,
+.modal-content,
+.filter-section,
+.bookings-table-container,
+.users-table-container,
+.events-table,
+.list-group-item,
+.form-control,
+.jumbotron {
+    color: #212529; /* A standard dark text color */
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-  text-align: start;
+    /* Minor fix to ensure links inside these components are also visible and standard blue */
+    .card a,
+    .report-section a,
+    .summary-card a,
+    .modal-content a {
+        color: #007bff;
+    }
+
+    /* Ensure table headers are also readable */
+    .table thead th {
+        color: #495057;
+    }
+
+/* Specific fix for dropdowns and form inputs if they appear on a dark background */
+.form-control, .form-select {
+    background-color: #333;
+    color: #f0f0f0;
+    border-color: #555;
 }
+
+    .form-control:focus, .form-select:focus {
+        background-color: #444;
+        color: #f0f0f0;
+        border-color: #007bff;
+    }

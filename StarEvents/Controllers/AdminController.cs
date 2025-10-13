@@ -272,7 +272,7 @@ namespace StarEvents.Controllers
         #endregion
 
         #region Other Management sections...
-        // ... (ManageVenues, ManageBookings, Reports, etc. would go here) ...
+
         public async Task<IActionResult> ManageVenues()
         {
             var venues = await _context.Venues.ToListAsync();
@@ -289,10 +289,78 @@ namespace StarEvents.Controllers
             return View(bookings);
         }
 
-        public IActionResult Reports()
+        // ----------------------------------------------------------------------
+        // Reports - Generate System Reports - UPDATED
+        // ----------------------------------------------------------------------
+        public async Task<IActionResult> Reports()
         {
+            var confirmedBookings = _context.Bookings.Where(b => b.Status == "Confirmed" || b.Status == "Completed");
+
+            // --- Summary Card Data ---
+            ViewBag.TotalSales = (await confirmedBookings.SumAsync(b => b.TotalAmount)).ToString("N0");
+            ViewBag.TotalTicketsSold = await confirmedBookings.SumAsync(b => b.TicketQuantity);
+            var totalSalesDecimal = await confirmedBookings.SumAsync(b => b.TotalAmount);
+            var totalTicketsDecimal = await confirmedBookings.SumAsync(b => b.TicketQuantity);
+            ViewBag.AverageBookingValue = totalTicketsDecimal > 0 ? (totalSalesDecimal / totalTicketsDecimal).ToString("N2") : "0.00";
+            ViewBag.TotalCustomers = (await _userManager.GetUsersInRoleAsync("Customer")).Count;
+            ViewBag.TotalOrganizers = (await _userManager.GetUsersInRoleAsync("Organizer")).Count;
+
+            // --- FIX: Add a new ViewBag property for the true total user count ---
+            ViewBag.TotalUsers = await _userManager.Users.CountAsync();
+
+
+            // --- Top 5 Events by Revenue ---
+            ViewBag.TopEvents = await _context.Events
+                .Include(e => e.Bookings) // Ensure bookings are loaded
+                .OrderByDescending(e => e.Bookings.Where(b => b.Status == "Confirmed" || b.Status == "Completed").Sum(b => b.TotalAmount))
+                .Take(5)
+                .Select(e => new {
+                    EventName = e.Title,
+                    TicketsSold = e.Bookings.Where(b => b.Status == "Confirmed" || b.Status == "Completed").Sum(b => b.TicketQuantity),
+                    TotalRevenue = e.Bookings.Where(b => b.Status == "Confirmed" || b.Status == "Completed").Sum(b => b.TotalAmount)
+                })
+                .ToListAsync();
+
+            // --- Monthly Revenue for Chart ---
+            var monthlyRevenueData = await _context.Bookings
+                .Where(b => b.BookingDate.Year == DateTime.Now.Year && (b.Status == "Confirmed" || b.Status == "Completed"))
+                .GroupBy(b => b.BookingDate.Month)
+                .Select(g => new { monthInt = g.Key, revenue = g.Sum(b => b.TotalAmount) })
+                .OrderBy(x => x.monthInt)
+                .ToListAsync();
+
+            var monthlyRevenueForChart = new List<object>();
+            for (int i = 1; i <= 12; i++)
+            {
+                var monthData = monthlyRevenueData.FirstOrDefault(m => m.monthInt == i);
+                monthlyRevenueForChart.Add(new
+                {
+                    month = new DateTime(DateTime.Now.Year, i, 1).ToString("MMM"),
+                    revenue = monthData?.revenue ?? 0
+                });
+            }
+            ViewBag.MonthlyRevenue = monthlyRevenueForChart;
+
+            // --- Sales by Category ---
+            ViewBag.SalesByCategory = await _context.Bookings
+                .Where(b => b.Status == "Confirmed" || b.Status == "Completed")
+                .Include(b => b.Event)
+                .GroupBy(b => b.Event.Category)
+                .Select(g => new { category = g.Key ?? "Uncategorized", sales = g.Sum(b => b.TotalAmount) })
+                .Where(g => g.sales > 0)
+                .ToListAsync();
+
+            // --- Booking Status Distribution ---
+            ViewBag.BookingStatusDistribution = await _context.Bookings
+                .GroupBy(b => b.Status)
+                .Select(g => new { status = g.Key, count = g.Count() })
+                .ToListAsync();
+
+
             return View();
         }
+        #endregion
+
 
         public IActionResult SystemSettings()
         {
@@ -364,8 +432,6 @@ namespace StarEvents.Controllers
         {
             return _context.Venues.Any(e => e.Id == id);
         }
-
-        #endregion
     }
 }
 
