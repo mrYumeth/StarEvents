@@ -17,59 +17,90 @@ html {
     min-height: 100%;
 }
 
-/* Main theme for the application.
-  This sets a global dark background and light text color.
-*/
+/* ============================================================
+   1. GLOBAL DARK THEME
+   ============================================================ */
 body {
     margin-bottom: 60px;
     background-color: #1a1a1a; /* Dark background */
-    color: #f0f0f0; /* Light text, which causes conflicts on white backgrounds */
+    color: #f0f0f0; /* Default text is light */
 }
 
-/* ---------------------------------------------------------------------------------
-    THEME FIX: Text visibility on light backgrounds
-    This is the most important rule. It targets all common components that have 
-    a light or white background and forces their text color to be dark, 
-    overriding the global light text color from the body.
----------------------------------------------------------------------------------
-*/
+/* ============================================================
+   2. MASTER RULE FOR ALL LIGHT CONTAINERS
+   This is the primary fix for your text visibility issue.
+   ============================================================ */
+/* Apply a white background and dark text to all known light-colored sections. */
 .card,
+.modal-content,
 .table,
+.jumbotron,
+.page-header,
 .report-section,
 .summary-card,
-.modal-content,
+.create-event-container,
+.profile-sidebar,
+.profile-main,
 .filter-section,
 .bookings-table-container,
-.users-table-container,
-.events-table,
-.list-group-item,
-.form-control,
-.jumbotron {
-    color: #212529; /* A standard dark text color */
+.light-section { /* Add any other custom white-background classes here */
+    background-color: #ffffff !important;
+    color: #212529 !important; /* CRITICAL: All text inside inherits this dark color */
 }
 
-    /* Minor fix to ensure links inside these components are also visible and standard blue */
+    /* Ensure links inside light sections are a visible blue. */
     .card a,
-    .report-section a,
-    .summary-card a,
-    .modal-content a {
-        color: #007bff;
+    .modal-content a,
+    .page-header a,
+    .report-section a {
+        color: #007bff !important;
     }
 
-    /* Ensure table headers are also readable */
+    /* Fix for table headers to ensure they are readable. */
     .table thead th {
         color: #495057;
     }
 
-/* Specific fix for dropdowns and form inputs if they appear on a dark background */
-.form-control, .form-select {
+/* ============================================================
+   3. FORM INPUT STYLES
+   ============================================================ */
+/* Default style for inputs on a DARK background */
+.form-control,
+.form-select {
     background-color: #333;
     color: #f0f0f0;
-    border-color: #555;
+    border: 1px solid #555;
 }
 
-    .form-control:focus, .form-select:focus {
+    .form-control:focus,
+    .form-select:focus {
         background-color: #444;
         color: #f0f0f0;
         border-color: #007bff;
     }
+
+/* Override for inputs inside any LIGHT container */
+.card .form-control, .card .form-select,
+.modal-content .form-control, .modal-content .form-select,
+.create-event-container .form-control, .create-event-container .form-select,
+.profile-main .form-control, .profile-main .form-select,
+.filter-section .form-control, .filter-section .form-select,
+.light-section .form-control, .light-section .form-select {
+    background-color: #ffffff;
+    color: #212529 !important; /* Force text to be black */
+    border: 1px solid #ced4da;
+}
+
+    .card .form-control:focus, .card .form-select:focus,
+    .modal-content .form-control:focus, .modal-content .form-select:focus,
+    .create-event-container .form-control:focus, .create-event-container .form-select:focus,
+    .profile-main .form-control:focus, .profile-main .form-select:focus,
+    .filter-section .form-control:focus, .filter-section .form-select:focus,
+    .light-section .form-control:focus, .light-section .form-select:focus {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+
+.section-title {
+    color: white !important;
+}

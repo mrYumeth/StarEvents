@@ -6,45 +6,31 @@
 }
 
 <style>
+    /* 1. Set the overall page background to dark */
     body {
         background-color: #2b2b2b;
-        color: #faf5ef;
     }
 
-    .card {
-        background-color: #1f1f1f;
-        border-radius: 12px;
-        color: #faf5ef;
-    }
-
-    .form-control, .form-check-input {
-        background-color: #2b2b2b;
-        color: #faf5ef;
-        border: 1px solid #444;
-    }
-
-        .form-control:focus {
-            background-color: #2b2b2b;
-            color: #faf5ef;
-            border-color: #faf5ef;
-            box-shadow: none;
-        }
-
-    .btn-theme {
-        background-color: #faf5ef;
-        color: #2b2b2b;
-        font-weight: bold;
-    }
-
-        .btn-theme:hover {
-            background-color: #e0dbd4;
-            color: #000;
-        }
-
+    /* 2. Style the custom logo and button for this page */
     .logo {
         display: block;
         margin: 0 auto 20px auto;
         max-width: 150px;
+    }
+
+    .btn-theme {
+        background-color: #007bff; /* A standard primary blue looks good */
+        color: #fff;
+        font-weight: bold;
+    }
+
+        .btn-theme:hover {
+            background-color: #0056b3;
+        }
+
+    /* 3. Make sure the 'Register as a new user' link is visible on the white card */
+    .card a {
+        color: #007bff;
     }
 </style>
 

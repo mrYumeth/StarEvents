@@ -156,6 +156,7 @@
     .section-title {
         font-size: 1.8rem;
         font-weight: 700;
+        /* THIS RULE IS TOO GENERAL, so we will override it below */
         color: #333;
         margin-bottom: 25px;
         display: flex;
@@ -163,13 +164,12 @@
         gap: 10px;
     }
 
-        .section-title::before {
-            content: '';
-            width: 5px;
-            height: 30px;
-            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-            border-radius: 3px;
-        }
+    /* This rule makes section titles inside white cards dark */
+    .recent-activity .section-title,
+    .system-alerts .section-title,
+    .chart-container .section-title {
+        color: #333 !important; /* A standard dark color */
+    }
 
     .content-grid {
         display: grid;
@@ -183,6 +183,7 @@
         border-radius: 15px;
         padding: 30px;
         box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+
     }
 
     .activity-item {
@@ -219,6 +220,7 @@
         padding: 15px;
         border-radius: 8px;
         margin-bottom: 15px;
+        color: #495057 !important;
     }
 
         .alert-item.warning {
