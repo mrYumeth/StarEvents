@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 
 namespace StarEvents.Controllers
 {
+    /// Manages the public-facing display of events.
     public class EventsController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -18,9 +19,9 @@ namespace StarEvents.Controllers
             _context = context;
         }
 
+        // Query for active events
         public async Task<IActionResult> Index(string? category, string? location, DateTime? dateFrom, string? keyword)
         {
-            // --- FIX: Fetch data for dropdowns ---
             var categories = await _context.Events
                 .Where(e => e.IsActive && e.Status == "Active" && !string.IsNullOrEmpty(e.Category))
                 .Select(e => e.Category)
@@ -35,7 +36,6 @@ namespace StarEvents.Controllers
 
             ViewBag.Categories = new SelectList(categories);
             ViewBag.Locations = new SelectList(locations);
-            // --- END FIX ---
 
             var query = _context.Events
                 .Where(e => e.IsActive && e.Status == "Active")
@@ -51,13 +51,11 @@ namespace StarEvents.Controllers
                 query = query.Where(e => e.Location == location);
             }
 
-            // --- FIX: Correct date filtering logic ---
+            // Date filtering logic 
             if (dateFrom.HasValue)
             {
-                // Compare the date part only, ignoring the time
                 query = query.Where(e => e.StartDate.Date >= dateFrom.Value.Date);
             }
-            // --- END FIX ---
 
             if (!string.IsNullOrEmpty(keyword))
             {
@@ -88,6 +86,7 @@ namespace StarEvents.Controllers
             return View(events);
         }
 
+        /// Displays the detailed view for a single event.
         public async Task<IActionResult> Details(int id)
         {
             var eventEntity = await _context.Events
@@ -107,13 +106,12 @@ namespace StarEvents.Controllers
                 Description = eventEntity.Description,
                 Category = eventEntity.Category,
                 StartDate = eventEntity.StartDate,
-                EndDate = eventEntity.EndDate, // Now a non-nullable DateTime
+                EndDate = eventEntity.EndDate, 
                 ImageUrl = eventEntity.ImageUrl,
 
-                // --- THIS LOGIC IS CORRECTED ---
                 DateDisplay = eventEntity.StartDate.ToString("ddd, MMM d, yyyy h:mm tt") +
-                              (eventEntity.EndDate > eventEntity.StartDate // <-- THIS LINE CHANGES
-                                  ? $" - {eventEntity.EndDate.ToString("h:mm tt")}" // <-- THIS LINE CHANGES
+                              (eventEntity.EndDate > eventEntity.StartDate 
+                                  ? $" - {eventEntity.EndDate.ToString("h:mm tt")}" 
                                   : ""),
 
                 VenueName = eventEntity.VenueName,

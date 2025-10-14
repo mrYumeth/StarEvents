@@ -24,18 +24,18 @@ namespace StarEvents.Controllers
                 var user = await _userManager.GetUserAsync(User);
                 if (user != null)
                 {
-                    // If they are signed in, check their role and redirect to the correct dashboard
+                    // If users are signed in, check their role and redirect to the correct dashboard
                     if (await _userManager.IsInRoleAsync(user, "Admin"))
                     {
-                        return RedirectToAction("Dashboard", "Admin"); // Assuming Admin dashboard is at /Admin/Dashboard
+                        return RedirectToAction("Dashboard", "Admin"); 
                     }
                     if (await _userManager.IsInRoleAsync(user, "Organizers"))
                     {
-                        return RedirectToAction("Index", "Organizers"); // Assuming Organizer dashboard is at /Organizer/Index
+                        return RedirectToAction("Index", "Organizers"); 
                     }
                     if (await _userManager.IsInRoleAsync(user, "Customer"))
                     {
-                        return RedirectToAction("Dashboard", "Customer"); // Redirects to your /Customer/Dashboard
+                        return RedirectToAction("Dashboard", "Customer"); 
                     }
                 }
             }
@@ -44,7 +44,6 @@ namespace StarEvents.Controllers
             return View();
         }
 
-        // You can keep your Privacy, Error, etc. actions here
         public IActionResult Privacy()
         {
             return View();

@@ -7,11 +7,9 @@ using Microsoft.AspNetCore.Identity;
 
 namespace StarEvents.Models.Payments
 {
-    /// <summary>
     /// Represents a financial transaction related to a booking.
-    /// In a real system, this data would come directly from the Payment Gateway.
-    /// </summary>
-    public class CustomerPayment // *** FIX: Class name changed to PaymentModel ***
+
+    public class CustomerPayment 
     {
         [Key]
         public int Id { get; set; }
@@ -20,7 +18,7 @@ namespace StarEvents.Models.Payments
         [Column(TypeName = "decimal(18, 2)")]
         public decimal Amount { get; set; }
 
-        // The unique ID returned by the payment gateway (e.g., Stripe, PayPal)
+        // The unique ID returned by the payment gateway 
         [Required]
         [StringLength(100)]
         public string TransactionId { get; set; } = string.Empty;
@@ -36,22 +34,21 @@ namespace StarEvents.Models.Payments
         [StringLength(20)]
         public string Status { get; set; } = string.Empty;
 
-        // For auditing: which customer made the payment
+        // Customer ID saved to identify payment
         [Required]
         public string CustomerId { get; set; } = string.Empty;
         public ApplicationUser Customer { get; set; } = default!;
 
-        // Optional: Masked card details for reference
+        // Masked card details for reference
         [StringLength(4)]
         public string? CardLastFour { get; set; }
 
-        // Navigation property to link back to the booking(s)
+        // Navigation property to link back to the bookings
         public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 
         // Time Tracking
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        // *** FIX: Added missing UpdatedAt property ***
         public DateTime? UpdatedAt { get; set; }
     }
 }

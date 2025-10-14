@@ -6,11 +6,13 @@ using Microsoft.AspNetCore.Http;
 using StarEvents.Models;
 
 namespace StarEvents.Models
+
+// This class is a core entity that holds all the necessary details about an event.
 {
     [Table("Events")]
     public class Event
     {
-        // FIX: Add a constructor to initialize the Bookings collection
+        // Constructor to initialize the Bookings collection
         public Event()
         {
             Bookings = new HashSet<Booking>();

@@ -14,6 +14,7 @@ using System.IO;
 
 namespace StarEvents.Controllers
 {
+    /// Manages the process of booking events for authenticated users.
     public class BookingData
     {
         public int EventId { get; set; }
@@ -38,11 +39,10 @@ namespace StarEvents.Controllers
             _context = context;
         }
 
-        // GET: /Bookings/Book/{id}
+        // GET Bookings
         public async Task<IActionResult> Book(int id)
         {
-            // FIX: Removed the invalid .Include(e => e.Venue)
-            var eventEntity = await _context.Events
+                var eventEntity = await _context.Events
                 .FirstOrDefaultAsync(e => e.Id == id && e.IsActive);
 
             if (eventEntity == null)
@@ -63,7 +63,6 @@ namespace StarEvents.Controllers
                 Title = eventEntity.Title,
                 Category = eventEntity.Category,
                 DateDisplay = eventEntity.StartDate.ToString("ddd, MMM d, yyyy"),
-                // FIX: Changed from eventEntity.Venue.City to the new eventEntity.Location property
                 VenueCity = eventEntity.Location,
                 TicketPrice = $"LKR {eventEntity.TicketPrice:N2}",
                 AvailableTickets = eventEntity.AvailableTickets ?? 0
@@ -72,7 +71,7 @@ namespace StarEvents.Controllers
             return View(viewModel);
         }
 
-        // POST: /Bookings/Book
+        // POST Bookings
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Book(int eventId, int quantity, string? promoCode)
@@ -83,7 +82,6 @@ namespace StarEvents.Controllers
                 return RedirectToAction(nameof(Book), new { id = eventId });
             }
 
-            // FIX: Removed the invalid .Include(e => e.Venue)
             var eventEntity = await _context.Events
                 .FirstOrDefaultAsync(e => e.Id == eventId);
 
@@ -118,7 +116,6 @@ namespace StarEvents.Controllers
                 EventId = eventId,
                 EventName = eventEntity.Title,
                 EventDate = eventEntity.StartDate.ToString("ddd, MMM d, yyyy"),
-                // FIX: Changed from eventEntity.Venue?.VenueName to the new eventEntity.VenueName property
                 VenueName = eventEntity.VenueName ?? "TBC",
                 TicketQuantity = quantity,
                 UnitPrice = unitPrice,
@@ -132,7 +129,7 @@ namespace StarEvents.Controllers
             return RedirectToAction(nameof(Payment));
         }
 
-        // GET: /Bookings/Payment
+        // GET: Bookings - Payment
         public async Task<IActionResult> Payment()
         {
             if (TempData["BookingData"] is string bookingDataJson)
@@ -140,7 +137,6 @@ namespace StarEvents.Controllers
                 var bookingData = JsonSerializer.Deserialize<BookingData>(bookingDataJson);
                 TempData.Keep("BookingData");
 
-                // FIX: Removed the invalid .Include(e => e.Venue)
                 var eventEntity = await _context.Events
                     .FirstOrDefaultAsync(e => e.Id == bookingData.EventId);
 
@@ -153,7 +149,7 @@ namespace StarEvents.Controllers
             return RedirectToAction("Index", "Events");
         }
 
-        // POST: /Bookings/ProcessPayment
+        // POST: Bookings - ProcessPayment
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ProcessPayment(string paymentMethod, string? cardLastFour)
@@ -224,10 +220,9 @@ namespace StarEvents.Controllers
             }
         }
 
-        // GET: /Bookings/Confirmation/{id}
+        // GET: Bookings - Confirmation
         public async Task<IActionResult> Confirmation(int bookingId)
         {
-            // FIX: Removed the invalid .ThenInclude(e => e.Venue)
             var booking = await _context.Bookings
                 .Include(b => b.Event)
                 .Include(b => b.Payment)
@@ -237,12 +232,11 @@ namespace StarEvents.Controllers
             return View(booking);
         }
 
-        // GET: /Bookings/MyBookings
+        // GET: Bookings - MyBookings
         [HttpGet]
         public async Task<IActionResult> MyBookings()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            // FIX: Removed the invalid .ThenInclude(e => e.Venue)
             var userBookings = await _context.Bookings
                 .Where(b => b.CustomerId == userId)
                 .Include(b => b.Event)
@@ -252,10 +246,9 @@ namespace StarEvents.Controllers
             return View(userBookings);
         }
 
-        // GET: /Bookings/ViewTicket/
+        // GET: Bookings - ViewTicket
         public async Task<IActionResult> ViewTicket(int id)
         {
-            // FIX: Removed the invalid .ThenInclude(e => e.Venue)
             var booking = await _context.Bookings
                 .Include(b => b.Event)
                 .Include(b => b.Payment)
@@ -279,7 +272,7 @@ namespace StarEvents.Controllers
             return View(booking);
         }
 
-        //Cancel
+        //Cancel Booking
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Cancel(int id, string reason)

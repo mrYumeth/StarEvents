@@ -1,37 +1,36 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Identity; // <-- Add this using statement
+using Microsoft.AspNetCore.Identity; 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StarEvents.Data;
 using StarEvents.Models;
-using StarEvents.ViewModels; // <-- Add this using statement
+using StarEvents.ViewModels; 
 using System;
 using System.IO;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace StarEvents.Controllers
+// Manages all functionalities for event organizers.
 {
     [Authorize(Roles = "Organizer")]
     public class OrganizersController : Controller
     {
         private readonly ApplicationDbContext _context;
         private readonly IWebHostEnvironment _webHostEnvironment;
-        // --- ADD THIS LINE ---
         private readonly UserManager<ApplicationUser> _userManager;
 
-        // --- UPDATE THE CONSTRUCTOR ---
+        //The database context for data operations.
         public OrganizersController(ApplicationDbContext context, IWebHostEnvironment webHostEnvironment, UserManager<ApplicationUser> userManager)
         {
             _context = context;
             _webHostEnvironment = webHostEnvironment;
-            _userManager = userManager; // Assign the user manager
+            _userManager = userManager; 
         }
-
-        // ... (Your existing code from Index() to EventExists() remains unchanged here) ...
-
+        // Displays the main dashboard for the organizer.
         public async Task<IActionResult> Index()
         {
             var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -55,7 +54,7 @@ namespace StarEvents.Controllers
 
             return View();
         }
-
+        // Displays the form for creating a new event.
         [HttpGet]
         public IActionResult CreateEvent()
         {
@@ -104,6 +103,7 @@ namespace StarEvents.Controllers
             return View(model);
         }
 
+        // Displays a list of all events created by the currently logged-in organizer.
         public async Task<IActionResult> MyEvents()
         {
             var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -114,6 +114,7 @@ namespace StarEvents.Controllers
             return View(events);
         }
 
+        // Displays the form for editing an existing event.
         [HttpGet]
         public async Task<IActionResult> EditEvent(int id)
         {
@@ -161,7 +162,7 @@ namespace StarEvents.Controllers
                             System.IO.File.Delete(oldImagePath);
                         }
                     }
-
+                    // Logic to update the event, including handling a new image upload
                     string wwwRootPath = _webHostEnvironment.WebRootPath;
                     string fileName = Path.GetFileNameWithoutExtension(model.ImageFile.FileName);
                     string extension = Path.GetExtension(model.ImageFile.FileName);
@@ -200,7 +201,7 @@ namespace StarEvents.Controllers
             }
             return View(model);
         }
-
+        // Delete event Logic
         [HttpGet]
         public async Task<IActionResult> DeleteEvent(int id)
         {
@@ -245,6 +246,7 @@ namespace StarEvents.Controllers
             return RedirectToAction(nameof(MyEvents));
         }
 
+        // Reports Logic for organizer
         public async Task<IActionResult> Reports()
         {
             var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -273,7 +275,7 @@ namespace StarEvents.Controllers
         }
 
 
-        // --- ADD THIS NEW SECTION FOR PROFILE EDITING ---
+        // PROFILE EDITING FOR ORGANIZERS 
         #region Profile Management
 
         [HttpGet]
@@ -335,3 +337,6 @@ namespace StarEvents.Controllers
         #endregion
     }
 }
+
+
+

@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StarEvents.Data;
 using StarEvents.Models;
-using StarEvents.ViewModels; // Make sure you have this using statement
+using StarEvents.ViewModels; 
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -23,23 +23,23 @@ namespace StarEvents.Controllers
             _userManager = userManager;
         }
 
-        // GET: /Customer or /Customer/Index
+        // GET: Customer 
         public IActionResult Index()
         {
             // Redirect to the main Dashboard page
             return RedirectToAction(nameof(Dashboard));
         }
 
-        // GET: /Customer/Dashboard
+        // GET: Customer - Dashboard
         public async Task<IActionResult> Dashboard()
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                return Challenge(); // Not found or not logged in
+                return Challenge(); 
             }
 
-            // --- Data Fetching ---
+            // Data Fetching of customers
             var allUserBookings = await _context.Bookings
                 .Where(b => b.CustomerId == user.Id)
                 .Include(b => b.Event)
@@ -52,10 +52,9 @@ namespace StarEvents.Controllers
                 .Take(3)
                 .ToListAsync();
 
-            // --- Logic ---
             var confirmedBookings = allUserBookings.Where(b => b.Status == "Confirmed" || b.Status == "Completed").ToList();
 
-            // --- Populate the ViewModel ---
+            // Populate the ViewModel 
             var dashboardViewModel = new CustomerDashboardViewModel
             {
                 UserName = user.FirstName,
@@ -70,7 +69,7 @@ namespace StarEvents.Controllers
             return View(dashboardViewModel);
         }
 
-        // GET: /Customer/Profile (UPDATED)
+        // GET: Customer - Profile 
         [HttpGet]
         public async Task<IActionResult> Profile()
         {
@@ -101,23 +100,22 @@ namespace StarEvents.Controllers
 
                 // Display fields
                 Email = user.Email,
-                LoyaltyPoints = user.LoyaltyPoints, // ADDED
-                CreatedAt = user.CreatedAt // ADDED
+                LoyaltyPoints = user.LoyaltyPoints, 
+                CreatedAt = user.CreatedAt 
             };
 
             return View(profileViewModel);
         }
 
-        // POST: /Customer/Profile
+        // POST: Customer - Profile
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Profile(ProfileUpdateModel model) // <-- USES THE NEW MODEL
+        public async Task<IActionResult> Profile(ProfileUpdateModel model) 
         {
             // This check will now pass because Email is not part of the model.
             if (!ModelState.IsValid)
             {
                 TempData["ErrorMessage"] = "Please ensure all required fields are filled correctly.";
-                // If validation fails, redirect back to the GET action to reload all data.
                 return RedirectToAction(nameof(Profile));
             }
 
@@ -127,7 +125,6 @@ namespace StarEvents.Controllers
                 return NotFound("Unable to load user.");
             }
 
-            // Update the user object with the values from the new model.
             user.FirstName = model.FirstName;
             user.LastName = model.LastName;
             user.PhoneNumber = model.PhoneNumber;
@@ -147,8 +144,7 @@ namespace StarEvents.Controllers
             return RedirectToAction(nameof(Profile));
         }
 
-        // --- NEW: Added the missing ChangePassword action ---
-        // POST: /Customer/ChangePassword
+        // POST: Customer - ChangePassword
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ChangePassword(string currentPassword, string newPassword, string confirmPassword)
