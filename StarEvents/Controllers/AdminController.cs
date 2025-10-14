@@ -11,40 +11,44 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace StarEvents.Controllers
+/// Manages all administrative functionalities for the StarEvents application.
+
 {
     [Authorize(Roles = "Admin")]
     public class AdminController : Controller
     {
+        //The database context for data access.
+
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
-        private readonly IWebHostEnvironment _webHostEnvironment; // Added for file uploads
+        private readonly IWebHostEnvironment _webHostEnvironment; 
 
         public AdminController(
             ApplicationDbContext context,
             UserManager<ApplicationUser> userManager,
             RoleManager<IdentityRole> roleManager,
-            IWebHostEnvironment webHostEnvironment) // Updated constructor
+            IWebHostEnvironment webHostEnvironment) 
         {
             _context = context;
             _userManager = userManager;
             _roleManager = roleManager;
-            _webHostEnvironment = webHostEnvironment; // Assign the service
+            _webHostEnvironment = webHostEnvironment; 
         }
 
-        // ----------------------------------------------------------------------
         // Dashboard
-        // ----------------------------------------------------------------------
         public async Task<IActionResult> Dashboard()
         {
-            // --- 1. Statistics Cards ---
+            // Statistics Cards 
             var today = DateTime.Now;
             var startOfCurrentMonth = new DateTime(today.Year, today.Month, 1);
             var startOfPreviousMonth = startOfCurrentMonth.AddMonths(-1);
             var endOfPreviousMonth = startOfCurrentMonth.AddDays(-1);
 
+            // Fetches the most recent activities to display on the dashboard
             ViewBag.TotalUsers = await _userManager.Users.CountAsync();
             ViewBag.NewUsersThisMonth = await _userManager.Users.CountAsync(u => u.CreatedAt >= startOfCurrentMonth);
             ViewBag.TotalEvents = await _context.Events.CountAsync();
@@ -56,7 +60,7 @@ namespace StarEvents.Controllers
             var totalRevenue = await confirmedBookings.SumAsync(b => b.TotalAmount);
             ViewBag.TotalRevenue = totalRevenue.ToString("N0");
 
-            // --- NEW: DYNAMIC REVENUE GROWTH CALCULATION ---
+            // DYNAMIC REVENUE GROWTH CALCULATION 
             var currentMonthRevenue = await confirmedBookings
                 .Where(b => b.BookingDate >= startOfCurrentMonth)
                 .SumAsync(b => b.TotalAmount);
@@ -68,24 +72,23 @@ namespace StarEvents.Controllers
             if (previousMonthRevenue > 0)
             {
                 var growthPercentage = ((currentMonthRevenue - previousMonthRevenue) / previousMonthRevenue) * 100;
-                ViewBag.RevenueGrowth = growthPercentage.ToString("F1"); // Format to one decimal place
+                ViewBag.RevenueGrowth = growthPercentage.ToString("F1"); 
             }
             else if (currentMonthRevenue > 0)
             {
-                ViewBag.RevenueGrowth = "100.0"; // Growth is effectively 100% if starting from zero
+                ViewBag.RevenueGrowth = "100.0"; 
             }
             else
             {
-                ViewBag.RevenueGrowth = "0.0"; // No revenue in either month
+                ViewBag.RevenueGrowth = "0.0"; 
             }
 
-            // --- 2. System Alerts (Now Dynamic) ---
+            // System Alerts 
             ViewBag.PendingApprovals = await _context.Events.CountAsync(e => e.Status == "Draft");
             ViewBag.LowStockEventsCount = await _context.Events.CountAsync(e => e.IsActive && e.AvailableTickets > 0 && e.AvailableTickets < 10);
-            // For backup, this is a placeholder. A real implementation would check a log file or a database record.
             ViewBag.LastBackupDays = 2;
 
-            // --- 3. Recent Activity Feed (Now Dynamic) ---
+            // Recent Activity Feed 
             var recentUsers = await _context.Users
                 .OrderByDescending(u => u.CreatedAt)
                 .Take(5)
@@ -125,7 +128,7 @@ namespace StarEvents.Controllers
             ViewBag.RecentActivities = allActivities;
 
 
-            // --- 4. Revenue Chart Data (Now Dynamic) ---
+            // Revenue Chart Data 
             var monthlyRevenueData = await _context.Bookings
                 .Where(b => b.BookingDate.Year == DateTime.Now.Year && (b.Status == "Confirmed" || b.Status == "Completed"))
                 .GroupBy(b => b.BookingDate.Month)
@@ -144,7 +147,6 @@ namespace StarEvents.Controllers
                 chartData.Add(monthlyRevenueData.ContainsKey(i) ? monthlyRevenueData[i] : 0);
             }
 
-            // We serialize the data to JSON so JavaScript can read it easily.
             ViewBag.ChartLabels = JsonSerializer.Serialize(chartLabels);
             ViewBag.ChartData = JsonSerializer.Serialize(chartData);
 
@@ -154,11 +156,7 @@ namespace StarEvents.Controllers
 
         #region User Management
 
-        // ----------------------------------------------------------------------
         // Manage Users (List)
-        // ----------------------------------------------------------------------
-        // --- UPDATE this method ---
-        // GET: /Admin/ManageUsers
         public async Task<IActionResult> ManageUsers()
         {
             var users = await _userManager.Users.ToListAsync();
@@ -169,14 +167,13 @@ namespace StarEvents.Controllers
                 usersWithRoles.Add(new { User = user, Roles = roles });
             }
 
-            // NEW: Pass the list of all roles to the view for the "Add User" modal dropdown.
+            //  Pass the list of all roles to the view for the "Add User" dropdown.
             ViewBag.AllRoles = await _roleManager.Roles.Select(r => r.Name).ToListAsync();
 
             return View(usersWithRoles);
         }
 
-        // --- ADD THIS NEW ACTION ---
-        // POST: /Admin/CreateUser
+        // POST: Admin - CreateUser
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateUser(CreateUserViewModel model)
@@ -197,7 +194,7 @@ namespace StarEvents.Controllers
                     Email = model.Email,
                     FirstName = model.FirstName,
                     LastName = model.LastName,
-                    EmailConfirmed = true // Admins create confirmed users by default
+                    EmailConfirmed = true 
                 };
 
                 var result = await _userManager.CreateAsync(user, model.Password);
@@ -221,9 +218,7 @@ namespace StarEvents.Controllers
             return RedirectToAction(nameof(ManageUsers));
         }
 
-        // ----------------------------------------------------------------------
         // GET User Details (for Modal)
-        // ----------------------------------------------------------------------
         [HttpGet]
         public async Task<IActionResult> GetUserDetails(string id)
         {
@@ -232,9 +227,7 @@ namespace StarEvents.Controllers
             return PartialView("_UserDetailsPartial", user);
         }
 
-        // ----------------------------------------------------------------------
         // POST Update User Details
-        // ----------------------------------------------------------------------
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateUser(ApplicationUser model)
@@ -245,7 +238,7 @@ namespace StarEvents.Controllers
             user.FirstName = model.FirstName;
             user.LastName = model.LastName;
             user.Email = model.Email;
-            user.UserName = model.Email; // <-- ADD THIS LINE to keep them in sync
+            user.UserName = model.Email; 
             user.PhoneNumber = model.PhoneNumber;
             user.EmailConfirmed = model.EmailConfirmed;
             user.LoyaltyPoints = model.LoyaltyPoints;
@@ -263,7 +256,7 @@ namespace StarEvents.Controllers
             return RedirectToAction(nameof(ManageUsers));
         }
 
-        // POST: /Admin/DeleteUser
+        // POST: Admin - DeleteUser
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteUser(string userId)
@@ -275,7 +268,7 @@ namespace StarEvents.Controllers
                 return RedirectToAction(nameof(ManageUsers));
             }
 
-            // --- Safety Check: Prevent deleting the last admin ---
+            // Prevent deleting the last admin 
             if (await _userManager.IsInRoleAsync(user, "Admin"))
             {
                 var admins = await _userManager.GetUsersInRoleAsync("Admin");
@@ -300,7 +293,7 @@ namespace StarEvents.Controllers
             return RedirectToAction(nameof(ManageUsers));
         }
 
-        // POST: /Admin/ResetUserPassword
+        // POST: Admin - ResetUserPassword
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResetUserPassword(string userId, string newPassword)
@@ -334,9 +327,7 @@ namespace StarEvents.Controllers
             return RedirectToAction(nameof(ManageUsers));
         }
 
-        // ----------------------------------------------------------------------
         // POST Change User Role
-        // ----------------------------------------------------------------------
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ChangeUserRole(string userId, string newRole)
@@ -382,10 +373,8 @@ namespace StarEvents.Controllers
 
         #region Event Management
 
-        // ----------------------------------------------------------------------
         // Manage Events (List)
-        // ----------------------------------------------------------------------
-        // GET: /Admin/ManageEvents
+        // GET: Admin - ManageEvents
         public async Task<IActionResult> ManageEvents(string status = "all")
         {
             var query = _context.Events.Include(e => e.Organizer).AsQueryable();
@@ -398,25 +387,21 @@ namespace StarEvents.Controllers
             return View(events);
         }
 
-        // --- CREATE EVENT ACTIONS (CORRECTED) ---
-        // GET: /Admin/CreateEvent
+        // CREATE EVENT ACTIONS 
+        // GET: Admin - CreateEvent
         [HttpGet]
         public IActionResult CreateEvent()
         {
-            // Removed the ViewBag.Venues logic
             return View();
         }
 
-        // POST: /Admin/CreateEvent
+        // POST: Admin - CreateEvent
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateEvent(Event eventModel)
         {
-            // --- THIS IS THE FIX ---
-            // Remove these from model state because they are assigned manually.
             ModelState.Remove("OrganizerId");
             ModelState.Remove("Organizer");
-            // -----------------------
 
             if (ModelState.IsValid)
             {
@@ -438,7 +423,6 @@ namespace StarEvents.Controllers
                 var currentUser = await _userManager.GetUserAsync(User);
                 if (currentUser == null)
                 {
-                    // This case should ideally not be reached if the user is authorized.
                     return Challenge();
                 }
 
@@ -455,29 +439,27 @@ namespace StarEvents.Controllers
                 return RedirectToAction(nameof(ManageEvents));
             }
 
-            // If we get here, another validation failed, so return to the form.
             return View(eventModel);
         }
 
-        // --- EDIT EVENT ACTIONS (CORRECTED) ---
-        // GET: /Admin/EditEvent/{id}
+        // EDIT EVENT ACTIONS 
+        // GET: Admin - EditEvent
         [HttpGet]
         public async Task<IActionResult> EditEvent(int id)
         {
             var eventToEdit = await _context.Events.FindAsync(id);
             if (eventToEdit == null) return NotFound();
-            // Removed the ViewBag.Venues logic
             return View(eventToEdit);
         }
 
-        // POST: /Admin/EditEvent/{id}
+        // POST: Admin - EditEvent
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditEvent(int id, Event eventModel)
         {
             if (id != eventModel.Id) return NotFound();
 
-            ModelState.Remove("Organizer"); // Keep this to prevent validation errors
+            ModelState.Remove("Organizer"); 
 
             if (ModelState.IsValid)
             {
@@ -489,18 +471,11 @@ namespace StarEvents.Controllers
                     // Handle optional new image upload
                     if (eventModel.ImageFile != null)
                     {
-                        // (Optional: Delete old image)
-                        // if (!string.IsNullOrEmpty(eventToUpdate.ImageUrl))
-                        // {
-                        //     var oldImagePath = Path.Combine(_webHostEnvironment.WebRootPath, eventToUpdate.ImageUrl.TrimStart('/'));
-                        //     if (System.IO.File.Exists(oldImagePath)) { System.IO.File.Delete(oldImagePath); }
-                        // }
-
                         string wwwRootPath = _webHostEnvironment.WebRootPath;
                         string fileName = Path.GetFileNameWithoutExtension(eventModel.ImageFile.FileName);
                         string extension = Path.GetExtension(eventModel.ImageFile.FileName);
                         fileName = fileName + DateTime.Now.ToString("yymmssfff") + extension;
-                        eventToUpdate.ImageUrl = "/images/events/" + fileName; // Update the image path
+                        eventToUpdate.ImageUrl = "/images/events/" + fileName; 
                         string path = Path.Combine(wwwRootPath, "images/events", fileName);
                         using (var fileStream = new FileStream(path, FileMode.Create))
                         {
@@ -536,9 +511,9 @@ namespace StarEvents.Controllers
             return View(eventModel);
         }
 
-        // POST: /Admin/DeleteEvent
+        // POST: Admin - DeleteEvent
         [HttpPost]
-        [ValidateAntiForgeryToken] // <-- ADD THIS LINE
+        [ValidateAntiForgeryToken] 
         public async Task<IActionResult> DeleteEvent(int id)
         {
             var eventToDelete = await _context.Events.FindAsync(id);
@@ -654,17 +629,12 @@ namespace StarEvents.Controllers
         #endregion
 
 
-        // ----------------------------------------------------------------------
-        // System Settings (GET) - UPDATED
-        // ----------------------------------------------------------------------
+        // System Settings (GET) 
         [HttpGet]
         public async Task<IActionResult> SystemSettings()
         {
-            // There should only ever be one row of settings.
-            // We use FirstOrDefault to get it, or null if the table is empty.
             var settings = await _context.SystemSettings.FirstOrDefaultAsync();
 
-            // If no settings exist yet, create a new object with default values.
             if (settings == null)
             {
                 settings = new SystemSetting
@@ -691,15 +661,11 @@ namespace StarEvents.Controllers
             return View(settings);
         }
 
-        // ----------------------------------------------------------------------
-        // System Settings (POST) - NEW ACTION
-        // ----------------------------------------------------------------------
+        // System Settings (POST) 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateSettings(SystemSetting model)
         {
-            // This custom model binding is needed to correctly handle unchecked checkboxes,
-            // which are not sent in the form data. We map form values to the model properties.
             var settingsToUpdate = await _context.SystemSettings.FirstOrDefaultAsync();
 
             if (settingsToUpdate == null)
@@ -735,9 +701,7 @@ namespace StarEvents.Controllers
             return RedirectToAction("Dashboard");
         }
 
-        // ----------------------------------------------------------------------
         // Manage Bookings - UPDATED
-        // ----------------------------------------------------------------------
         public async Task<IActionResult> ManageBookings(string status, string customerEmail, DateTime? fromDate, DateTime? toDate)
         {
             // Start with the base query and include all necessary related data
@@ -765,11 +729,10 @@ namespace StarEvents.Controllers
 
             if (toDate.HasValue)
             {
-                // Add 1 day to the 'toDate' to include all bookings on that day
+                // Add to include all bookings on that day
                 query = query.Where(b => b.BookingDate < toDate.Value.AddDays(1));
             }
 
-            // Execute the final query
             var bookings = await query.OrderByDescending(b => b.BookingDate).ToListAsync();
 
             return View(bookings);
@@ -778,3 +741,5 @@ namespace StarEvents.Controllers
 
     }
 }
+
+
