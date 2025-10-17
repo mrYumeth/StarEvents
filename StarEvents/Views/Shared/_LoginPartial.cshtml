@@ -7,21 +7,25 @@
 <ul class="navbar-nav">
     @if (SignInManager.IsSignedIn(User))
     {
-        // Get the full user object to access custom properties like FirstName
-        var user = await UserManager.GetUserAsync(User);
-        var userName = user?.FirstName ?? user?.UserName; // Use FirstName if available, otherwise fall back to username
-
         <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="fas fa-user-circle"></i> @userName
+                <i class="fas fa-user-circle"></i> Hello, @UserManager.GetUserAsync(User).Result?.FirstName
             </a>
-            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown" style="background-color: #1f1f1f;">
-                <li><a class="dropdown-item" asp-controller="Customer" asp-action="Profile" style="color: #faf5ef;">My Profile</a></li>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
 
-                <li><hr class="dropdown-divider" style="border-color: #444;"></li>
+                @if (User.IsInRole("Organizer"))
+                {
+                    <li><a class="dropdown-item" asp-controller="Organizers" asp-action="EditProfile">My Profile</a></li>
+                }
+                else if (User.IsInRole("Customer"))
+                {
+                    <li><a class="dropdown-item" asp-controller="Customer" asp-action="Profile">My Profile</a></li>
+                }
+
+                <li><hr class="dropdown-divider"></li>
                 <li>
                     <form class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
-                        <button type="submit" class="dropdown-item" style="color: #faf5ef;">Logout</button>
+                        <button type="submit" class="dropdown-item">Logout</button>
                     </form>
                 </li>
             </ul>
