@@ -48,15 +48,37 @@
     @RenderSection("Styles", required: false)
 </head>
 <body>
-    @inject SignInManager<ApplicationUser> SignInManager
-
     <header>
         <nav class="navbar navbar-expand-sm navbar-dark border-bottom box-shadow mb-3">
             <div class="container-fluid">
-                <a class="navbar-brand d-flex align-items-center" asp-area="" asp-controller="Home" asp-action="Index">
-                    <img src="~/images/StarEvents.png" alt="Star Events Logo" style="height:40px; margin-right:10px;" />
-                    StarEvents
-                </a>
+
+                @if (SignInManager.IsSignedIn(User))
+                {
+                    if (User.IsInRole("Admin"))
+                    {
+                        <a class="navbar-brand d-flex align-items-center" asp-controller="Admin" asp-action="Dashboard">
+                            <img src="~/images/StarEvents.png" alt="Star Events Logo" style="height:40px; margin-right:10px;" /> StarEvents
+                        </a>
+                    }
+                    else if (User.IsInRole("Organizer"))
+                    {
+                        <a class="navbar-brand d-flex align-items-center" asp-controller="Organizers" asp-action="Index">
+                            <img src="~/images/StarEvents.png" alt="Star Events Logo" style="height:40px; margin-right:10px;" /> StarEvents
+                        </a>
+                    }
+                    else // Default for Customer or other roles
+                    {
+                        <a class="navbar-brand d-flex align-items-center" asp-controller="Customer" asp-action="Dashboard">
+                            <img src="~/images/StarEvents.png" alt="Star Events Logo" style="height:40px; margin-right:10px;" /> StarEvents
+                        </a>
+                    }
+                }
+                else // User is not signed in
+                {
+                    <a class="navbar-brand d-flex align-items-center" asp-controller="Home" asp-action="Index">
+                        <img src="~/images/StarEvents.png" alt="Star Events Logo" style="height:40px; margin-right:10px;" /> StarEvents
+                    </a>
+                }
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
                         aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -66,13 +88,9 @@
 
                         @if (SignInManager.IsSignedIn(User))
                         {
-                            
                             @if (User.IsInRole("Customer"))
                             {
                                 // --- CUSTOMER-SPECIFIC LINKS ---
-                                <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Customer" asp-action="Dashboard">Home</a>
-                                </li>
                                 <li class="nav-item">
                                     <a class="nav-link" asp-controller="Events" asp-action="Index">Browse Events</a>
                                 </li>
@@ -84,16 +102,13 @@
                             {
                                 // --- ORGANIZER-SPECIFIC LINKS ---
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Organizers" asp-action="Index">Home</a>
+                                    <a class="nav-link" asp-controller="Organizers" asp-action="MyEvents">My Events</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Organizers" asp-action="MyEvents">My Events</a>
+                                    <a class="nav-link" asp-controller="Organizers" asp-action="CreateEvent">Create Event</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Organizers" asp-action="CreateEvent">Create Event</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Organizers" asp-action="Reports">Reports</a>
+                                    <a class="nav-link" asp-controller="Organizers" asp-action="Reports">Reports</a>
                                 </li>
                             }
                             else if (User.IsInRole("Admin"))
@@ -108,15 +123,11 @@
                         {
                             // --- LINKS FOR GUESTS (NOT LOGGED IN) ---
                             <li class="nav-item">
-                                <a class="nav-link" asp-controller="Home" asp-action="Index">Home</a>
-                            </li>
-                            <li class="nav-item">
                                 <a class="nav-link" asp-controller="Events" asp-action="Index">Browse Events</a>
                             </li>
                         }
                     </ul>
 
-                    @* This partial view correctly handles showing the user's name and Login/Logout links *@
                     <partial name="_LoginPartial" />
 
                 </div>
@@ -137,7 +148,6 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- PDF EXPORT -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     @await RenderSectionAsync("Scripts", required: false)

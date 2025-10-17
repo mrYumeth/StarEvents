@@ -54,6 +54,26 @@ namespace StarEvents.Areas.Identity.Pages.Account
 
         public async Task OnGetAsync(string returnUrl = null)
         {
+            // If the user is already signed in, redirect them to their correct dashboard.
+            if (_signInManager.IsSignedIn(User))
+            {
+                if (User.IsInRole("Admin"))
+                {
+                    Response.Redirect(Url.Action("Dashboard", "Admin"));
+                    return;
+                }
+                else if (User.IsInRole("Organizer"))
+                {
+                    Response.Redirect(Url.Action("Index", "Organizers"));
+                    return;
+                }
+                else // Default to Customer dashboard
+                {
+                    Response.Redirect(Url.Action("Dashboard", "Customer"));
+                    return;
+                }
+            }
+
             if (!string.IsNullOrEmpty(ErrorMessage))
             {
                 ModelState.AddModelError(string.Empty, ErrorMessage);
@@ -61,6 +81,7 @@ namespace StarEvents.Areas.Identity.Pages.Account
 
             returnUrl ??= Url.Content("~/");
 
+            // Clear the existing external cookie to ensure a clean login process
             await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
 
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();

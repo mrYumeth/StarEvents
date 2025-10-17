@@ -9,7 +9,7 @@
     {
         <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="fas fa-user-circle"></i> Hello, @UserManager.GetUserAsync(User).Result?.FirstName
+                <i class="fas fa-user-circle"></i> @UserManager.GetUserAsync(User).Result?.FirstName
             </a>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
 

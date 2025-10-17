@@ -238,12 +238,14 @@ namespace StarEvents.Controllers
             return View(eventToDelete);
         }
 
+        //Delete Event Method
         [HttpPost, ActionName("DeleteEvent")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteEventConfirmed(int id)
         {
             var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var eventToDelete = await _context.Events
+                .Include(e => e.Bookings)
                 .FirstOrDefaultAsync(e => e.Id == id && e.OrganizerId == userIdString);
 
             if (eventToDelete == null)
@@ -251,19 +253,37 @@ namespace StarEvents.Controllers
                 return NotFound();
             }
 
-            if (!string.IsNullOrEmpty(eventToDelete.ImageUrl))
+            // Check if the event has any associated bookings.
+            if (eventToDelete.Bookings.Any())
             {
-                var imagePath = Path.Combine(_webHostEnvironment.WebRootPath, eventToDelete.ImageUrl.TrimStart('/'));
-                if (System.IO.File.Exists(imagePath))
+                // If it has bookings, DO NOT DELETE. Instead, mark it as Cancelled.
+                eventToDelete.Status = "Cancelled";
+                eventToDelete.IsActive = false;
+                eventToDelete.UpdatedAt = DateTime.UtcNow;
+
+                _context.Update(eventToDelete);
+                await _context.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = "Event has been cancelled. It was not deleted because it has existing bookings.";
+            }
+            else
+            {
+                // If there are NO bookings, it's safe to permanently delete the event.
+                if (!string.IsNullOrEmpty(eventToDelete.ImageUrl))
                 {
-                    System.IO.File.Delete(imagePath);
+                    var imagePath = Path.Combine(_webHostEnvironment.WebRootPath, eventToDelete.ImageUrl.TrimStart('/'));
+                    if (System.IO.File.Exists(imagePath))
+                    {
+                        System.IO.File.Delete(imagePath);
+                    }
                 }
+
+                _context.Events.Remove(eventToDelete);
+                await _context.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = "Event deleted successfully!";
             }
 
-            _context.Events.Remove(eventToDelete);
-            await _context.SaveChangesAsync();
-
-            TempData["SuccessMessage"] = "Event deleted successfully!";
             return RedirectToAction(nameof(MyEvents));
         }
 
