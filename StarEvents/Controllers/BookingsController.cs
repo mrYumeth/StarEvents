@@ -273,13 +273,15 @@ namespace StarEvents.Controllers
         }
 
         //Cancel Booking
+        // POST: /Bookings/Cancel
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Cancel(int id, string reason)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var booking = await _context.Bookings
-                .Include(b => b.Event)
+                .Include(b => b.Event) // Include Event to access its properties
+                .Include(b => b.Customer) 
                 .FirstOrDefaultAsync(b => b.Id == id && b.CustomerId == userId);
 
             if (booking == null)
@@ -294,15 +296,31 @@ namespace StarEvents.Controllers
                 return RedirectToAction("MyBookings");
             }
 
+            // 1. Check if the customer and points exist before deducting.
+            if (booking.Customer != null && booking.PointsEarned > 0)
+            {
+                // 2. Subtract the points earned from this booking.
+                booking.Customer.LoyaltyPoints -= booking.PointsEarned;
+
+                // Optional: Prevent points from going into a negative balance.
+                if (booking.Customer.LoyaltyPoints < 0)
+                {
+                    booking.Customer.LoyaltyPoints = 0;
+                }
+            }
+
+            // Update the booking status and details
             booking.Status = "Cancelled";
             booking.CancellationReason = reason;
             booking.CancellationDate = DateTime.UtcNow;
 
+            // Add the tickets back to the event's available count
             booking.Event.AvailableTickets += booking.TicketQuantity;
 
+            // Save all changes (booking status, available tickets, AND loyalty points) to the database
             await _context.SaveChangesAsync();
 
-            TempData["SuccessMessage"] = $"Booking #{booking.Id} has been successfully cancelled.";
+            TempData["SuccessMessage"] = $"Booking #{booking.Id} has been cancelled. {booking.PointsEarned} points were deducted.";
             return RedirectToAction("MyBookings");
         }
     }
