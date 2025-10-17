@@ -53,12 +53,14 @@
         font-weight: 700;
         color: #333;
         margin-bottom: 10px;
+        color: white !important;
     }
 
     .success-subtitle {
         font-size: 1.2rem;
         color: #666;
         margin-bottom: 30px;
+        color: white !important;
     }
 
     .confirmation-card {
@@ -170,6 +172,7 @@
         justify-content: space-between;
         padding: 10px 0;
         font-size: 1rem;
+        color: #333 !important;
     }
 
         .summary-row.total {
@@ -404,7 +407,7 @@
             </div>
             <div class="summary-row">
                 <span>Subtotal:</span>
-                <span>LKR @(Model.UnitPrice* Model.TicketQuantity).ToString("N2")</span>
+                <span>LKR @((Model.UnitPrice * Model.TicketQuantity).ToString("N2"))</span>
             </div>
             @if (Model.DiscountAmount > 0)
             {
