@@ -443,72 +443,87 @@ namespace StarEvents.Controllers
         }
 
         // EDIT EVENT ACTIONS 
-        // GET: Admin - EditEvent
-        [HttpGet]
-        public async Task<IActionResult> EditEvent(int id)
+        // GET: Admin/EditEvent/5
+        public async Task<IActionResult> EditEvent(int? id)
         {
-            var eventToEdit = await _context.Events.FindAsync(id);
-            if (eventToEdit == null) return NotFound();
-            return View(eventToEdit);
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var @event = await _context.Events.FindAsync(id);
+            if (@event == null)
+            {
+                return NotFound();
+            }
+
+            // *** THIS IS THE FIX for the Category Dropdown ***
+            // Create a list of categories and pass it to the view.
+            ViewBag.Categories = new List<string> { "Music", "Conference", "Workshop", "Art", "Food", "Sports", "Other" };
+
+            return View(@event);
         }
 
-        // POST: Admin - EditEvent
+        // POST: Admin/EditEvent/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditEvent(int id, Event eventModel)
+        public async Task<IActionResult> EditEvent(int id, Event eventFromForm)
         {
-            if (id != eventModel.Id) return NotFound();
+            if (id != eventFromForm.Id)
+            {
+                return NotFound();
+            }
 
-            ModelState.Remove("Organizer"); 
+            // *** THE FIX: Manually remove validation errors for properties not sent by the form. ***
+            ModelState.Remove("Organizer"); // The Organizer object is not included in the form post.
+            ModelState.Remove("Bookings");  // The Bookings collection is also not included.
 
             if (ModelState.IsValid)
             {
+                // Use the reliable "Fetch-then-Update" pattern.
+                var eventToUpdate = await _context.Events.FindAsync(id);
+                if (eventToUpdate == null)
+                {
+                    return NotFound();
+                }
+
+                // Copy the updated values from the form to the object you fetched from the database.
+                eventToUpdate.Title = eventFromForm.Title;
+                eventToUpdate.VenueName = eventFromForm.VenueName;
+                eventToUpdate.Location = eventFromForm.Location;
+                eventToUpdate.StartDate = eventFromForm.StartDate;
+                eventToUpdate.EndDate = eventFromForm.EndDate;
+                eventToUpdate.Category = eventFromForm.Category;
+                eventToUpdate.Status = eventFromForm.Status;
+                eventToUpdate.Description = eventFromForm.Description;
+                eventToUpdate.TicketPrice = eventFromForm.TicketPrice;
+                eventToUpdate.AvailableTickets = eventFromForm.AvailableTickets;
+                eventToUpdate.IsActive = eventFromForm.IsActive;
+                eventToUpdate.UpdatedAt = DateTime.UtcNow;
+
                 try
                 {
-                    var eventToUpdate = await _context.Events.FindAsync(id);
-                    if (eventToUpdate == null) return NotFound();
-
-                    // Handle optional new image upload
-                    if (eventModel.ImageFile != null)
-                    {
-                        string wwwRootPath = _webHostEnvironment.WebRootPath;
-                        string fileName = Path.GetFileNameWithoutExtension(eventModel.ImageFile.FileName);
-                        string extension = Path.GetExtension(eventModel.ImageFile.FileName);
-                        fileName = fileName + DateTime.Now.ToString("yymmssfff") + extension;
-                        eventToUpdate.ImageUrl = "/images/events/" + fileName; 
-                        string path = Path.Combine(wwwRootPath, "images/events", fileName);
-                        using (var fileStream = new FileStream(path, FileMode.Create))
-                        {
-                            await eventModel.ImageFile.CopyToAsync(fileStream);
-                        }
-                    }
-
-                    // Update properties
-                    eventToUpdate.Title = eventModel.Title;
-                    eventToUpdate.Description = eventModel.Description;
-                    eventToUpdate.Category = eventModel.Category;
-                    eventToUpdate.StartDate = eventModel.StartDate;
-                    eventToUpdate.EndDate = eventModel.EndDate;
-                    eventToUpdate.TicketPrice = eventModel.TicketPrice;
-                    eventToUpdate.AvailableTickets = eventModel.AvailableTickets;
-                    eventToUpdate.VenueName = eventModel.VenueName;
-                    eventToUpdate.Location = eventModel.Location;
-                    eventToUpdate.Status = eventModel.Status;
-                    eventToUpdate.IsActive = eventModel.IsActive;
-                    eventToUpdate.UpdatedAt = DateTime.UtcNow;
-
-                    _context.Update(eventToUpdate);
                     await _context.SaveChangesAsync();
                     TempData["SuccessMessage"] = "Event updated successfully!";
                     return RedirectToAction(nameof(ManageEvents));
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!_context.Events.Any(e => e.Id == eventModel.Id)) return NotFound();
-                    else throw;
+                    if (!EventExists(eventFromForm.Id))
+                    {
+                        return NotFound();
+                    }
+                    else
+                    {
+                        throw;
+                    }
                 }
             }
-            return View(eventModel);
+
+            // If ModelState is still invalid after our fix, it means there's a real validation error.
+            // Repopulate the dropdown and return the view so the user can see the error messages.
+            ViewBag.Categories = new List<string> { "Music", "Conference", "Workshop", "Art", "Food", "Sports", "Other" };
+            return View(eventFromForm);
         }
 
         // POST: Admin - DeleteEvent
@@ -737,9 +752,13 @@ namespace StarEvents.Controllers
 
             return View(bookings);
         }
-        
+        private bool EventExists(int id)
+        {
+            return _context.Events.Any(e => e.Id == id);
+        }
 
     }
+
 }
 
 
