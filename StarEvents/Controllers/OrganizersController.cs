@@ -278,34 +278,89 @@ namespace StarEvents.Controllers
         // PROFILE EDITING FOR ORGANIZERS 
         #region Profile Management
 
+        // GET: Organizers/EditProfile
         [HttpGet]
         public async Task<IActionResult> EditProfile()
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                return Challenge();
+                return Challenge(); // Or NotFound()
             }
+
+            var userId = user.Id;
+            var events = await _context.Events
+                .Where(e => e.OrganizerId == userId)
+                .Include(e => e.Bookings)
+                .ToListAsync();
+
+            ViewBag.TotalEvents = events.Count;
+            ViewBag.TotalTicketsSold = events.SelectMany(e => e.Bookings).Where(b => b.Status == "Confirmed").Sum(b => b.TicketQuantity);
+            ViewBag.TotalRevenue = events.SelectMany(e => e.Bookings).Where(b => b.Status == "Confirmed").Sum(b => b.TotalAmount);
 
             var profileViewModel = new ProfileViewModel
             {
                 FirstName = user.FirstName,
                 LastName = user.LastName,
-                Email = user.Email
+                Email = user.Email,
+                PhoneNumber = user.PhoneNumber,
+                CreatedAt = user.CreatedAt
             };
 
             return View(profileViewModel);
         }
 
+        // POST: Organizers/EditProfile
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditProfile(ProfileViewModel model)
+        public async Task<IActionResult> EditProfile(OrganizerProfileUpdateModel model)
         {
+            // Check if the submitted data is valid based on the new model's rules
             if (!ModelState.IsValid)
             {
-                var userForEmail = await _userManager.GetUserAsync(User);
-                if (userForEmail != null) model.Email = userForEmail.Email;
-                return View(model);
+                TempData["ErrorMessage"] = "Please ensure all required fields are filled out correctly.";
+                return RedirectToAction(nameof(EditProfile));
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                // This should not happen for a logged-in user, but it's a good safeguard
+                return NotFound("Unable to load user.");
+            }
+
+            // Update the user entity with the data from the model
+            user.FirstName = model.FirstName;
+            user.LastName = model.LastName;
+            user.PhoneNumber = model.PhoneNumber;
+
+            // Persist the changes to the database
+            var result = await _userManager.UpdateAsync(user);
+
+            if (result.Succeeded)
+            {
+                TempData["SuccessMessage"] = "Your profile has been updated successfully!";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Failed to update profile. Please try again.";
+                // Optionally, you can log the errors for debugging purposes
+                // foreach (var error in result.Errors) { ... }
+            }
+
+            // Redirect back to the profile page to show the result of the operation
+            return RedirectToAction(nameof(EditProfile));
+        }
+
+        // POST: Organizers/ChangePassword
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePassword(string currentPassword, string newPassword, string confirmPassword)
+        {
+            if (string.IsNullOrEmpty(currentPassword) || string.IsNullOrEmpty(newPassword) || newPassword != confirmPassword)
+            {
+                TempData["ErrorMessage"] = "Please check your password fields.";
+                return RedirectToAction(nameof(EditProfile));
             }
 
             var user = await _userManager.GetUserAsync(User);
@@ -314,24 +369,16 @@ namespace StarEvents.Controllers
                 return NotFound("Unable to load user.");
             }
 
-            user.FirstName = model.FirstName;
-            user.LastName = model.LastName;
+            var changePasswordResult = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
 
-            var result = await _userManager.UpdateAsync(user);
-
-            if (result.Succeeded)
+            if (!changePasswordResult.Succeeded)
             {
-                TempData["SuccessMessage"] = "Profile updated successfully!";
+                TempData["ErrorMessage"] = "Error: Could not change password. Please check your current password.";
                 return RedirectToAction(nameof(EditProfile));
             }
 
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError(string.Empty, error.Description);
-            }
-
-            model.Email = user.Email;
-            return View(model);
+            TempData["SuccessMessage"] = "Your password has been changed successfully.";
+            return RedirectToAction(nameof(EditProfile));
         }
 
         #endregion

@@ -1,48 +1,250 @@
 ﻿@model StarEvents.ViewModels.ProfileViewModel
 @{
     ViewData["Title"] = "My Profile";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h3>Edit My Profile</h3>
+<style>
+    .organizer-profile-container {
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    .profile-grid {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 30px;
+    }
+
+    .profile-card {
+        background: #ffffff;
+        border-radius: 15px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+        padding: 30px;
+    }
+
+    .organizer-info {
+        text-align: center;
+        margin-bottom: 25px;
+    }
+
+    .organizer-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        margin: 0 auto 15px;
+        background: linear-gradient(45deg, #4b6cb7 0%, #182848 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3.5rem;
+        font-weight: 600;
+    }
+
+    .organizer-name {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: #2c3e50;
+    }
+
+    .organizer-email {
+        /* This class is still here but the inline style will take precedence */
+        font-size: 1rem;
+    }
+
+    .stats-card .stat-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 0;
+        border-bottom: 1px solid #ecf0f1;
+    }
+
+        .stats-card .stat-item:last-child {
+            border-bottom: none;
+        }
+
+    .stat-label {
+        font-weight: 600;
+        color: #34495e;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .stat-value {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #4b6cb7;
+    }
+
+    .main-content .profile-card {
+        padding: 40px;
+    }
+
+    .section-header {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #ecf0f1;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #555;
+        margin-bottom: 8px;
+    }
+
+    .form-control {
+        border-radius: 8px;
+        padding: 12px;
+        border: 1px solid #ced4da;
+    }
+
+        .form-control:focus {
+            border-color: #4b6cb7;
+            box-shadow: 0 0 0 0.25rem rgba(75, 108, 183, 0.25);
+        }
+
+    .btn-save-organizer {
+        background-color: #4b6cb7;
+        border: none;
+        color: white;
+        padding: 12px 30px;
+        font-weight: 600;
+        border-radius: 25px;
+    }
+
+        .btn-save-organizer:hover {
+            background-color: #182848;
+        }
+
+    .security-section {
+        margin-top: 40px;
+        padding-top: 30px;
+        border-top: 2px solid #ecf0f1;
+    }
+</style>
+
+<div class="organizer-profile-container">
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="profile-grid">
+        <div class="profile-sidebar">
+            <div class="profile-card">
+                <div class="organizer-info">
+                    <div class="organizer-avatar">
+                        @Model.FirstName.Substring(0, 1).ToUpper()
+                    </div>
+                    <div class="organizer-name">@Model.FirstName @Model.LastName</div>
+
+                    <div class="organizer-email" style="color: #666;">@Model.Email</div>
+
                 </div>
-                <div class="card-body">
-                    @if (TempData["SuccessMessage"] != null)
-                    {
-                        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
-                    }
+            </div>
 
-                    <form asp-action="EditProfile" method="post">
-                        @Html.AntiForgeryToken()
-                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+            <div class="profile-card stats-card mt-4">
+                <h5 class="mb-3">📊 Your Stats</h5>
+                <div class="stat-item">
+                    <span class="stat-label">Events Hosted</span>
+                    <span class="stat-value">@ViewBag.TotalEvents</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Tickets Sold</span>
+                    <span class="stat-value">@ViewBag.TotalTicketsSold</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Total Revenue</span>
+                    <span class="stat-value">LKR @ViewBag.TotalRevenue.ToString("N2")</span>
+                </div>
+            </div>
+        </div>
 
-                        <div class="mb-3">
-                            <label asp-for="FirstName" class="form-label"></label>
+        <div class="main-content">
+            <div class="profile-card">
+                <h2 class="section-header">Edit Your Profile</h2>
+                <form asp-action="EditProfile" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="FirstName" class="form-label">First Name</label>
                             <input asp-for="FirstName" class="form-control" />
                             <span asp-validation-for="FirstName" class="text-danger"></span>
                         </div>
-                        <div class="mb-3">
-                            <label asp-for="LastName" class="form-label"></label>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="LastName" class="form-label">Last Name</label>
                             <input asp-for="LastName" class="form-control" />
                             <span asp-validation-for="LastName" class="text-danger"></span>
                         </div>
-                        <div class="mb-3">
-                            <label asp-for="Email" class="form-label"></label>
-                            <input asp-for="Email" class="form-control" disabled />
-                        </div>
-                        <button type="submit" class="btn btn-primary">Save Changes</button>
-                        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
-                    </form>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="PhoneNumber" class="form-label">Phone Number</label>
+                        <input asp-for="PhoneNumber" class="form-control" />
+                    </div>
+                    <button type="submit" class="btn btn-save-organizer">Save Changes</button>
+                </form>
+
+                <div class="security-section">
+                    <h3 class="section-header">Security Settings</h3>
+                    <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#passwordModal">Change Password</button>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+<div class="modal fade" id="passwordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Change Password</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="ChangePassword" asp-controller="Organizers" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Current Password</label>
+                        <input type="password" name="currentPassword" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">New Password</label>
+                        <input type="password" name="newPassword" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Confirm New Password</label>
+                        <input type="password" name="confirmPassword" class="form-control" required />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Update Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
-    @await Html.PartialAsync("_ValidationScriptsPartial")
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 }
