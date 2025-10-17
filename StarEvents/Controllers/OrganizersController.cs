@@ -54,17 +54,27 @@ namespace StarEvents.Controllers
 
             return View();
         }
+
         // Displays the form for creating a new event.
         [HttpGet]
         public IActionResult CreateEvent()
         {
+            // FIX: Pass the minimum date to the view for client-side validation
+            ViewBag.MinDate = DateTime.Now.ToString("yyyy-MM-ddTHH:mm");
             return View();
         }
 
+        // Displays the form for creating a new event.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateEvent(Event model)
         {
+            // FIX: Server-side validation to ensure start date is not in the past.
+            if (model.StartDate < DateTime.Now)
+            {
+                ModelState.AddModelError("StartDate", "The event start date cannot be in the past.");
+            }
+
             ModelState.Remove("OrganizerId");
             ModelState.Remove("Organizer");
             ModelState.Remove("Bookings");
@@ -77,31 +87,34 @@ namespace StarEvents.Controllers
                     string fileName = Path.GetFileNameWithoutExtension(model.ImageFile.FileName);
                     string extension = Path.GetExtension(model.ImageFile.FileName);
                     fileName = fileName + DateTime.Now.ToString("yymmssfff") + extension;
-                    model.ImageUrl = "/images/" + fileName;
-                    string path = Path.Combine(wwwRootPath, "images", fileName);
+                    model.ImageUrl = "/images/events/" + fileName; // Standardized path
+                    string path = Path.Combine(wwwRootPath, "images/events", fileName);
                     using (var fileStream = new FileStream(path, FileMode.Create))
                     {
                         await model.ImageFile.CopyToAsync(fileStream);
                     }
                 }
 
-                var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                model.OrganizerId = currentUserId;
+                model.OrganizerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 model.CreatedAt = DateTime.UtcNow;
-
-                if (string.IsNullOrEmpty(model.Status))
-                {
-                    model.Status = "Draft";
-                }
+                if (string.IsNullOrEmpty(model.Status)) { model.Status = "Draft"; }
 
                 _context.Events.Add(model);
                 await _context.SaveChangesAsync();
 
-                TempData["SuccessMessage"] = "Event created successfully!";
+                TempData["SuccessMessage"] = "Event created successfully! It is now pending admin approval.";
                 return RedirectToAction(nameof(MyEvents));
             }
+
+            // If we get here, something failed, so return the view with the errors
+            ViewBag.MinDate = DateTime.Now.ToString("yyyy-MM-ddTHH:mm");
             return View(model);
         }
+
+        /// <summary>
+        /// Displays the form for editing an existing event.
+        /// </summary>
+
 
         // Displays a list of all events created by the currently logged-in organizer.
         public async Task<IActionResult> MyEvents()
@@ -114,17 +127,22 @@ namespace StarEvents.Controllers
             return View(events);
         }
 
-        // Displays the form for editing an existing event.
+
+
+        // CORRECT your existing EditEvent GET method
         [HttpGet]
         public async Task<IActionResult> EditEvent(int id)
         {
             var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var eventToEdit = await _context.Events
-                .FirstOrDefaultAsync(e => e.Id == id && e.OrganizerId == userIdString);
+            var eventToEdit = await _context.Events.FirstOrDefaultAsync(e => e.Id == id && e.OrganizerId == userIdString);
             if (eventToEdit == null)
             {
                 return NotFound();
             }
+
+            // ADD THIS LINE
+            ViewBag.MinDate = DateTime.Now.ToString("yyyy-MM-ddTHH:mm");
+
             return View(eventToEdit);
         }
 
@@ -132,9 +150,12 @@ namespace StarEvents.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditEvent(int id, Event model)
         {
-            if (id != model.Id)
+            if (id != model.Id) return NotFound();
+
+            // FIX: Server-side validation to ensure start date is not in the past.
+            if (model.StartDate < DateTime.Now)
             {
-                return NotFound();
+                ModelState.AddModelError("StartDate", "The event start date cannot be in the past.");
             }
 
             ModelState.Remove("OrganizerId");
