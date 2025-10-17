@@ -114,6 +114,7 @@
         padding: 25px;
         border-radius: 10px;
         margin-top: 30px;
+        color: #333 !important;
     }
 
     .price-row {
@@ -285,25 +286,22 @@
         function displayMessage(type, message) {
             const area = document.getElementById('js-message-area');
             const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
-            const iconClass = type === 'success' ? 'bi-check-circle-fill' : 'bi-x-circle-fill';
             area.innerHTML = `
                 <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
-                    <i class="bi ${iconClass} me-2"></i> ${message}
+                    ${message}
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             `;
         }
 
-        // Ensures script runs only if the form exists
         const bookingForm = document.getElementById('bookingForm');
         if (bookingForm) {
-            // Use the ViewModel properties passed from the controller
             const ticketPrice = parseFloat('@Model.TicketPrice'.replace(/[^0-9.-]+/g, ""));
             const maxTickets = parseInt('@Model.AvailableTickets');
             let currentQuantity = 1;
-            let discountPercent = 0; // This is for UI display only
+            let discountPercent = 0;
 
-            // Get elements once
+            // Get element references
             const quantityInput = document.getElementById('quantityInput');
             const quantityDisplay = document.getElementById('quantityDisplay');
             const decreaseBtn = document.getElementById('decreaseBtn');
@@ -313,6 +311,7 @@
             const totalEl = document.getElementById('total');
             const discountRow = document.getElementById('discountRow');
             const promoCodeInput = document.getElementById('promoCode');
+            const messageArea = document.getElementById('js-message-area');
 
             function updateQuantity() {
                 quantityInput.value = currentQuantity;
@@ -341,41 +340,37 @@
                 const discount = subtotal * discountPercent;
                 const total = subtotal - discount;
 
-                subtotalEl.textContent = subtotal.toFixed(2);
-                discountEl.textContent = discount.toFixed(2);
-                totalEl.textContent = total.toFixed(2);
+                // Update UI with currency formatting for consistency
+                subtotalEl.textContent = `LKR ${subtotal.toFixed(2)}`;
+                discountEl.textContent = discount.toFixed(2); // The "LKR" is already in the HTML for this element
+                totalEl.textContent = `LKR ${total.toFixed(2)}`;
 
                 discountRow.style.display = discount > 0 ? 'flex' : 'none';
             }
 
-            function applyPromo() {
-                const promoCode = promoCodeInput.value.trim().toUpperCase();
+            // --- THIS IS THE CORRECTED PROMO CODE LOGIC ---
+        function applyPromo() {
+            const promoCode = promoCodeInput.value.trim().toUpperCase();
+            messageArea.innerHTML = ''; // Now this will work!
 
-                // IMPORTANT: This logic is for UI feedback only.
-                // The actual validation and discount application MUST be done on the server.
-                // This client-side check is just for a better user experience.
-                if (promoCode === 'FIRST10') {
-                    discountPercent = 0.10;
-                    displayMessage('success', 'Promo code applied! 10% discount reflected. Final price will be confirmed upon submission.');
-                } else if (promoCode === 'SAVE20') {
-                    discountPercent = 0.20;
-                    displayMessage('success', 'Promo code applied! 20% discount reflected. Final price will be confirmed upon submission.');
-                } else if (promoCode !== '') {
-                    discountPercent = 0;
-                    displayMessage('danger', `Invalid promo code: ${promoCode}`);
-                } else {
-                    discountPercent = 0; // reset if empty
-                }
-
-                calculateTotal();
+            if (promoCode === 'STAREVENTS') {
+                discountPercent = 0.10;
+                displayMessage('success', 'Promo code "STAREVENTS" applied successfully!');
+            } else if (promoCode !== '') {
+                discountPercent = 0;
+                displayMessage('danger', `Invalid promo code: ${promoCodeInput.value}`);
+            } else {
+                discountPercent = 0;
             }
+            calculateTotal();
+        }
 
-            // CHANGE: Using addEventListener for cleaner separation of concerns
+            // Add event listeners
             decreaseBtn.addEventListener('click', decreaseQuantity);
             increaseBtn.addEventListener('click', increaseQuantity);
             document.querySelector('.btn-apply-promo').addEventListener('click', applyPromo);
 
-            // Initialize the view
+            // Initial calculation on page load
             updateQuantity();
         } else {
             console.error("Booking form not found. Scripts will not be initialized.");

@@ -474,7 +474,6 @@ namespace StarEvents.Controllers
                 return NotFound();
             }
 
-            // *** THE FIX: Manually remove validation errors for properties not sent by the form. ***
             ModelState.Remove("Organizer"); // The Organizer object is not included in the form post.
             ModelState.Remove("Bookings");  // The Bookings collection is also not included.
 
@@ -520,7 +519,6 @@ namespace StarEvents.Controllers
                 }
             }
 
-            // If ModelState is still invalid after our fix, it means there's a real validation error.
             // Repopulate the dropdown and return the view so the user can see the error messages.
             ViewBag.Categories = new List<string> { "Music", "Conference", "Workshop", "Art", "Food", "Sports", "Other" };
             return View(eventFromForm);
