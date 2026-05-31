@@ -3,7 +3,7 @@ StarEvents is a robust, production-ready **Event Management and Logistics Web Ap
 
 ---
 
-## 🚀 Architectural & System Features
+## Architectural & System Features
 
 * **Layered Clean Architecture:** Features a modular codebase separating presentation (`Views`, `Controllers`), persistent database layers (`Data`, `Migrations`), standalone Domain Schemas (`Models`), and reusable underlying business handlers (`Services`).
 * **Role-Based Access Control (RBAC):** Integrated natively with **ASP.NET Core Identity** and EF Core Roles to seamlessly deliver custom views and restricted dashboard interactions across distinct roles (`Admin`, `Organizer`, `Client`).
@@ -13,7 +13,7 @@ StarEvents is a robust, production-ready **Event Management and Logistics Web Ap
 
 ---
 
-## 🛠️ Tech Stack & Dependencies
+## Tech Stack & Dependencies
 
 * **Backend Framework:** C# (#), .NET Core 8.0+ (ASP.NET Core MVC)
 * **ORM / Database Engine:** Entity Framework Core, SQL Server / Microsoft Azure SQL
